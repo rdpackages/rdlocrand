@@ -29,7 +29,7 @@ install.packages('rdlocrand')
 
 ## References
 
-For overviews and introductions, see [rdpackages website](https://rdpackages.github.io/).
+For overviews and introductions, see [rdpackages website](https://rdpackages.github.io).
 
 ### Software and Implementation
 
