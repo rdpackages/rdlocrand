@@ -1,6 +1,6 @@
 ### RDLOCRAND
 
-The rdlocrand package provides Stata and R implementations of statistical inference and graphical procedures for Regression Discontinuity designs employing local randomization methods. It provides point estimators, confidence intervals estimators, binomial manipulation testing, windows selectors, automatic plots, sensitivity analysis, and other related features.
+The `rdlocrand` package provides Stata and R implementations of statistical inference and graphical procedures for Regression Discontinuity designs employing local randomization methods. It provides point estimators, confidence intervals estimators, binomial manipulation testing, windows selectors, automatic plots, sensitivity analysis, and other related features.
 
 This work was supported in part by the National Science Foundation through grants [SES-1357561](https://www.nsf.gov/awardsearch/showAward?AWD_ID=1357561).
 
@@ -29,7 +29,7 @@ install.packages('rdlocrand')
 
 ## References
 
-For overviews and introductions, see [rdpackages website]().
+For overviews and introductions, see [rdpackages website](https://rdpackages.github.io/).
 
 ### Software and Implementation
 
