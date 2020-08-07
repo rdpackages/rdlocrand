@@ -33,15 +33,13 @@ For overviews and introductions, see [rdpackages website]().
 
 ### Software and Implementation
 
-Cattaneo, Frandsen and Titiunik (2015): Randomization Inference in the Regression Discontinuity Design: An Application to Party Advantages in the U.S. Senate, Journal of Causal Inference 3(1): 1-24.
-Cattaneo, Titiunik and Vazquez-Bare (2016): Inference in Regression Discontinuity Designs under Local Randomization, Stata Journal 16(2): 331-367.
-Cattaneo, Titiunik and Vazquez-Bare (2017): Comparing Inference Approaches for RD Designs: A Reexamination of the Effect of Head Start on Child Mortality, Journal of Policy Analysis and Management 36(3): 643-681. [Replication Files]
+- Cattaneo, Titiunik and Vazquez-Bare (2016): [Inference in Regression Discontinuity Designs under Local Randomization](references/Cattaneo-Titiunik-VazquezBare_2016_Stata.pdf), Stata Journal 16(2): 331-367.
 
 ### Technical and Methodological
 
-- Cattaneo, Frandsen and Titiunik (2015): [Randomization Inference in the Regression Discontinuity Design: An Application to Party Advantages in the U.S. Senate](references/), Journal of Causal Inference 3(1): 1-24.
+- Cattaneo, Frandsen and Titiunik (2015): [Randomization Inference in the Regression Discontinuity Design: An Application to Party Advantages in the U.S. Senate](references/Cattaneo-Frandsen-Titiunik_2015_JCI.pdf), Journal of Causal Inference 3(1): 1-24.
 
-- Cattaneo, Titiunik and Vazquez-Bare (2017): Comparing Inference Approaches for RD Designs: A Reexamination of the Effect of Head Start on Child Mortality, Journal of Policy Analysis and Management 36(3): 643-681. [Replication Files]
+- Cattaneo, Titiunik and Vazquez-Bare (2017): [Comparing Inference Approaches for RD Designs: A Reexamination of the Effect of Head Start on Child Mortality](references/Cattaneo-Titiunik-VazquezBare_2017_JPAM.pdf), Journal of Policy Analysis and Management 36(3): 643-681. [Replication Files]().
 
 <br>
 <br>
