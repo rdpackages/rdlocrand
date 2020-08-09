@@ -45,7 +45,7 @@ _Stata Journal_ 16(2): 331-367.
 _Journal of Causal Inference_ 3(1): 1-24.
 
 - Cattaneo, Titiunik and Vazquez-Bare (2017): [Comparing Inference Approaches for RD Designs: A Reexamination of the Effect of Head Start on Child Mortality](https://rdpackages.github.io/references/Cattaneo-Titiunik-VazquezBare_2017_JPAM.pdf).<br>
-_Journal of Policy Analysis and Management_ 36(3): 643-681. [Replication Files]().
+_Journal of Policy Analysis and Management_ 36(3): 643-681.
 
 <br><br>
 
