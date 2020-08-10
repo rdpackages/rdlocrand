@@ -1,8 +1,8 @@
 *** RDLOCRAND: Stata toc file
-d
+
 d RDLOCRAND: Finite-sample inference for RD designs using local randomization and related methods.
+d 
 d https://rdpackages.github.io/rdlocrand
-d
 
 v 0.7
 
