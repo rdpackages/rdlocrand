@@ -58,20 +58,20 @@
 {title:Description}
 
 {p 4 8}{cmd:rdrandinf} implements randomization inference and related methods for regression discontinuity (RD) designs, employing observations in a specified or data-driven selected window around the cutoff where local randomization is assumed to hold. See
-{browse "https://sites.google.com/site/rdpackages/rdlocrand/Cattaneo-Frandsen-Titiunik_2015_JCI.pdf":Cattaneo, Frandsen and Titiunik (2015)}
+{browse "https://rdpackages.github.io/references/Cattaneo-Frandsen-Titiunik_2015_JCI.pdf":Cattaneo, Frandsen and Titiunik (2015)}
 and
-{browse "https://sites.google.com/site/rdpackages/rdlocrand/Cattaneo-Titiunik-VazquezBare_2017_JPAM.pdf":Cattaneo, Titiunik and Vazquez-Bare (2017)}
+{browse "https://rdpackages.github.io/references/Cattaneo-Titiunik-VazquezBare_2017_JPAM.pdf":Cattaneo, Titiunik and Vazquez-Bare (2017)}
 for an introduction to this methodology.{p_end}
 
 {p 4 8}A detailed introduction to this command is given in
-{browse "https://sites.google.com/site/rdpackages/rdlocrand/Cattaneo-Titiunik-VazquezBare_2016_Stata.pdf":Cattaneo, Titiunik and Vazquez-Bare (2016)}.{p_end}
-{p 8 8}Companion {browse "www.r-project.org":R} functions are also available {browse "https://sites.google.com/site/rdpackages/rdlocrand":here}.{p_end}
+{browse "https://rdpackages.github.io/references/Cattaneo-Titiunik-VazquezBare_2016_Stata.pdf":Cattaneo, Titiunik and Vazquez-Bare (2016)}.{p_end}
+{p 8 8}Companion {browse "www.r-project.org":R} functions are also available {browse "https://rdpackages.github.io/rdlocrand":here}.{p_end}
 
 {p 4 8}Companion functions are {help rdrandinf:rdwinselect}, {help rdsensitivity:rdsensitivity} and {help rdrbounds:rdrbounds}.{p_end}
 
 {p 4 8}Related Stata and R packages useful for inference in RD designs are described in the following website:{p_end}
 
-{p 8 8}{browse "https://sites.google.com/site/rdpackages/":https://sites.google.com/site/rdpackages/}{p_end}
+{p 8 8}{browse "https://rdpackages.github.io/":https://rdpackages.github.io/}{p_end}
 
 
 {marker options}{...}
@@ -246,15 +246,15 @@ This option is deprecated and only included for backward compatibility.{p_end}
 {title:References}
 
 {p 4 8}Cattaneo, M. D., Frandsen, B., and R. Titiunik. 2015.
-{browse "https://sites.google.com/site/rdpackages/rdlocrand/Cattaneo-Frandsen-Titiunik_2015_JCI.pdf":Randomization Inference in the Regression Discontinuity Design: An Application to Party Advantages in the U.S. Senate}.{p_end}
+{browse "https://rdpackages.github.io/references/Cattaneo-Frandsen-Titiunik_2015_JCI.pdf":Randomization Inference in the Regression Discontinuity Design: An Application to Party Advantages in the U.S. Senate}.{p_end}
 {p 8 8}{it:Journal of Causal Inference} 3(1): 1-24.{p_end}
 
 {p 4 8}Cattaneo, M.D., Titiunik, R. and G. Vazquez-Bare. 2016.
-{browse "https://sites.google.com/site/rdpackages/rdlocrand/Cattaneo-Titiunik-VazquezBare_2016_Stata.pdf":Inference in Regression Discontinuity Designs under Local Randomization}.{p_end}
+{browse "https://rdpackages.github.io/references/Cattaneo-Titiunik-VazquezBare_2016_Stata.pdf":Inference in Regression Discontinuity Designs under Local Randomization}.{p_end}
 {p 8 8}{it:Stata Journal} 16(2): 331-367.{p_end}
 
 {p 4 8}Cattaneo, M. D., Titiunik, R. and G. Vazquez-Bare. 2017.
-{browse "https://sites.google.com/site/rdpackages/rdlocrand/Cattaneo-Titiunik-VazquezBare_2017_JPAM.pdf":Comparing Inference Approaches for RD Designs: A Reexamination of the Effect of Head Start on Child Mortality}.{p_end}
+{browse "https://rdpackages.github.io/references/Cattaneo-Titiunik-VazquezBare_2017_JPAM.pdf":Comparing Inference Approaches for RD Designs: A Reexamination of the Effect of Head Start on Child Mortality}.{p_end}
 {p 8 8}{it:Journal of Policy Analysis and Management} 36(3): 643-681.{p_end}
 
 

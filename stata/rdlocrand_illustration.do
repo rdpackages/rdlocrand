@@ -2,10 +2,11 @@
 ** RDLOCRAND Stata Package 
 ** Empirical Illustration
 ** Authors: Matias D. Cattaneo, Rocio Titiunik and Gonzalo Vazquez-Bare
-** Last update: 30-Jul-2020
+** Last update: 2020-08-22
 ********************************************************************************
-* net install rdlocrand, from(https://sites.google.com/site/rdpackages/rdlocrand/stata) replace
+* net install rdlocrand, from(https://raw.githubusercontent.com/rdpackages/rdlocrand/master/stata) replace
 ********************************************************************************
+
 
 use rdlocrand_senate.dta, clear
 global covariates presdemvoteshlag1 population demvoteshlag1 ///
