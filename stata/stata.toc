@@ -1,2 +1,6 @@
-v 0.7.1
+v 3
+d RDLOCRAND: finite-sample inference using local randomization and related methods.
+d            https://rdpackages.github.io/rdlocrand
+d
+
 p rdlocrand
