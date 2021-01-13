@@ -1,6 +1,6 @@
 ********************************************************************************
 * RDSENSITIVITY: sensitivity analysis for randomization inference in RD designs
-* !version 0.7.1 2020-08-22
+* !version 0.7.2 2021-01-12
 * Authors: Matias Cattaneo, Rocio Titiunik, Gonzalo Vazquez-Bare
 ********************************************************************************
 
@@ -276,7 +276,7 @@ program define rdsensitivity, rclass sortpreserve
 	qui {
 		svmat Rows, name(T)
 		expand `nw'
-		sort T
+		sort T, stable
 		svmat Cols, name(W)
 		replace W = W[_n-`nw'] if W == .
 

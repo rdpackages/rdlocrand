@@ -1,6 +1,6 @@
 ********************************************************************************
 * RDWINSELECT: window selection for randomization inference in RD
-* !version 0.7.1 2020-08-22
+* !version 0.7.2 2021-01-12
 * Authors: Matias Cattaneo, Rocio Titiunik, Gonzalo Vazquez-Bare
 ********************************************************************************
 
@@ -40,7 +40,7 @@ program define rdwinselect, rclass sortpreserve
 	
 	qui gen double `runvar' = `runv_aux' - `cutoff' if `touse'
 	qui gen `treated' = `runvar' >= 0 if `runvar'!=. & `touse'
-	sort `runvar'
+	sort `runvar', stable
 	qui count if `treated'==0 & `touse'
 	local N_control = r(N)
 	qui count if `treated'==1 & `touse'

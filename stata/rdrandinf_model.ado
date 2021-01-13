@@ -1,6 +1,6 @@
 ********************************************************************************
 * rdrandinf_model: auxiliary program to permute statistics
-* !version 0.7.1 2020-08-22
+* !version 0.7.2 2021-01-12
 * Authors: Matias Cattaneo, Rocio Titiunik, Gonzalo Vazquez-Bare
 * NOTE: runvar must be recentered at the cutoff before running
 ********************************************************************************

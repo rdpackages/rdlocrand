@@ -1,5 +1,5 @@
 {smcl}
-{* *! version 0.6 30Jul2020}{...}
+{* *! version 0.7.2 01Jan2021}{...}
 {viewerjumpto "Syntax" "rdrbounds##syntax"}{...}
 {viewerjumpto "Description" "rdrbounds##description"}{...}
 {viewerjumpto "Options" "rdrbounds##options"}{...}
