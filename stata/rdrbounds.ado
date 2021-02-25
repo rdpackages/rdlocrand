@@ -1,6 +1,6 @@
 ********************************************************************************
 * RDRBOUNDS: Rosenbum bounds for randomization inference in RDD
-* !version 0.7.2 2021-01-12
+* !version 0.8 2021-02-23
 * Authors: Matias Cattaneo, Rocio Titiunik, Gonzalo Vazquez-Bare
 ********************************************************************************
 
@@ -63,6 +63,7 @@ program define rdrbounds, rclass sortpreserve
 
 	if "`fuzzy'"!=""{
 		local fuzzy_opt "fuzzy(`fuzzy')"
+		local stat_opt ""
 	}
 	
 	tempvar runvar

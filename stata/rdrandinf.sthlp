@@ -1,5 +1,5 @@
 {smcl}
-{* *! version 0.7.2 01Jan2021}{...}
+{* *! version 0.8 23Feb2021}{...}
 {viewerjumpto "Syntax" "rdrandinf##syntax"}{...}
 {viewerjumpto "Description" "rdrandinf##description"}{...}
 {viewerjumpto "Options" "rdrandinf##options"}{...}
@@ -37,12 +37,14 @@
 {cmd:seed(}{it:#}{cmd:)}
 {cmd:{opt cov:ariates}(}{it:varlist}{cmd:)} 
 {cmd:obsmin(}{it:#}{cmd:)}
-{cmd:wmin(}{it:#}{cmd:)}
+{cmd:wmin(}{it:# #}{cmd:)}
 {cmd:wobs(}{it:#}{cmd:)}
 {cmd:wstep(}{it:#}{cmd:)}
+{cmd:{opt wsym:metric}}
 {cmd:{opt wmass:points}}
 {cmd:{opt nw:indows}(}{it:#}{cmd:)}
 {cmd:rdwstat(}{it:stat_name}{cmd:)}
+{cmd:{opt dropmiss:ing}}
 {cmd:{opt approx:imate}}
 {cmd:rdwreps(}{it:#}{cmd:)}
 {cmd:level(}{it:#}{cmd:)}
@@ -141,7 +143,8 @@ Default is {cmd:seed(666)}.{p_end}
 
 {p 4 8}{cmd:obsmin(}{it:#}{cmd:)} specifies the minimum number of observations above and below the cutoff in the smallest window employed by the companion command {help rdwinselect:rdwinselect}. Default is {cmd:obsmin(10)}.{p_end}
 
-{p 4 8}{cmd:wmin(}{it:#}{cmd:)} specifies the smallest window to be used (if {cmd: minobs(}{it:#}{cmd:)} is not specified) by the companion command {help rdwinselect:rdwinselect}.
+{p 4 8}{cmd:wmin(}{it:# #}{cmd:)} specifies the initial window to be used (if {cmd: obsmin(}{it:#}{cmd:)} is not specified).
+Can be a single number to specify the length of the (symmetric) initial window, or two numbers to specify the left and right limits of the initial window.
 Specifying both {cmd:wmin(}{it:#}{cmd:)} and {cmd:obsmin(}{it:#}{cmd:)} returns an error.{p_end}
 
 {p 4 8}{cmd:wobs(}{it:#}{cmd:)} specifies the number of observations to be added at each side of the cutoff at each step.
@@ -150,9 +153,13 @@ Default is {cmd:wobs(5)}.{p_end}
 {p 4 8}{cmd:wstep(}{it:#}{cmd:)} specifies the increment in window length (if {cmd:obsstep(}{it:#}{cmd:)} is not specified) by the companion command {help rdwinselect:rdwinselect}.
 Specifying both {cmd:wobs(}{it:#}{cmd:)} and {cmd:wstep(}{it:#}{cmd:)} returns an error.{p_end}
 
+{p 4 8}{cmd:{opt wsym:metric}} requires that windows be symmetrized around the cutoff (when {cmd:wobs(}{it:#}{cmd:)} is specified).{p_end}
+
 {p 4 8}{cmd:{opt wmass:points}} specifies that the running variable is discrete and each masspoint should be used as a window.{p_end}
 
 {p 4 8}{cmd:{opt nw:indows}(}{it:#}{cmd:)} specifies the number of windows to be used by the companion command {help rdwinselect:rdwinselect}. Default is {cmd:nwindows(10)}.{p_end}
+
+{p 4 8}{cmd:{opt dropmiss:ing}} drop rows with missing values in covariates when calculating windows.{p_end}
 
 {p 4 8}{cmd:rdwstat(}{it:#}{cmd:)} specifies the statistic to be used by the companion command {help rdwinselect:rdwinselect} (see help file for options). Default option is {cmd:rdwstat(diffmeans)}.{p_end}
 

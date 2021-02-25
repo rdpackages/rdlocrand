@@ -1,5 +1,5 @@
 {smcl}
-{* *! version 0.7.2 01Jan2021}{...}
+{* *! version 0.8 23Feb2021}{...}
 {viewerjumpto "Syntax" "rdsensitivity##syntax"}{...}
 {viewerjumpto "Description" "rdsensitivity##description"}{...}
 {viewerjumpto "Options" "rdsensitivity##options"}{...}
@@ -20,13 +20,15 @@
 [{cmd:,} 
 {cmd:{opt c:utoff}(}{it:#}{cmd:)} 
 {cmd:wlist(}{it:numlist}{cmd:)} 
+{cmd:wlist_left(}{it:numlist}{cmd:)} 
 {cmd:tlist(}{it:numlist}{cmd:)} 
 {cmd:{opt stat:istic}(}{it:stat_name}{cmd:)} 
 {cmd:p(}{it:#}{cmd:)} 
 {cmd:evalat(}{it:point}{cmd:)}
 {cmd:kernel(}{it:kerneltype}{cmd:)}
 {cmd:fuzzy(}{it:fuzzy_var [fuzzy_stat]}{cmd:)}
-{cmd:ci(}{it:window [level]}{cmd:)}
+{cmd:ci(}{it:# #}{cmd:)}
+{cmd:ci_alpha(}{it:#}{cmd:)}
 {cmd:reps(}{it:#}{cmd:)}
 {cmd:seed(}{it:#}{cmd:)}
 {cmd:saving(}{it:filename}{cmd:)} 
@@ -66,8 +68,12 @@ Default is {cmd:cutoff(0)}.{p_end}
 
 {dlgtab:Window and TE lists}
 
-{p 4 8}{cmd:wlist(}{it:#}{cmd:)} specifies the list of window lengths to be evaluated.
-By default the program constructs 10 windows around the cutoff, the first one including 10 treated and control observations and then adding 5 observations to each group in subsequent windows.{p_end}
+{p 4 8}{cmd:wlist(}{it:#}{cmd:)} specifies the list of window limits to the right of the cutoff.
+By default the program constructs 10 symmetric windows around the cutoff, the first one including 10 treated and control observations and then adding 5 observations to each group in subsequent windows.{p_end}
+
+{p 4 8}{cmd:wlist_left(}{it:#}{cmd:)} specifies the list of window limits to the left of the cutoff.
+When not specified, the command uses symmetric windows around the cutoff based on {cmd:wlist()}.
+{p_end}
 
 {p 4 8}{cmd:tlist(}{it:#}{cmd:)} specifies the list of null values for the treatment effect.
 By default the program employs ten evenly spaced points within the 
@@ -93,8 +99,11 @@ Default is {cmd:kernel(uniform)}.
 
 {dlgtab:Inference}
 
-{p 4 8}{cmd:ci(}{it:window [alpha]}{cmd:)} returns the confidence interval corresponding to the window length indicated in {it:window}. 
-The value for {it:window} needs to be one of the values in {cmd:wlist}. The level of the confidence interval can be specified with the {it:alpha} option. 
+{p 4 8}{cmd:ci(}{it:# #}{cmd:)} returns the confidence interval corresponding to the window indicated in {it:window}. 
+First value is the left limit, second value if the right limit of the window.
+The values in {it:window} need to coincide with one of the values in {cmd:wlist} and {cmd:wlist_left}. {p_end}
+
+{p 4 8}{cmd:ci_alpha(}{it:#}{cmd:)} the value of alpha for the confidence interval. 
 Default alpha is 0.05, corresponding to a 95 percent confidence interval.{p_end}
 
 {p 4 8}{cmd:reps(}{it:#}{cmd:)} specifies the number of replications.

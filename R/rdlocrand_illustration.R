@@ -1,6 +1,6 @@
 ###############################################################################
 # rdlocrand: illustration file
-# !version 0.7.1 23-Aug-2020
+# !version 0.8 23-Feb-2021
 # Authors: Matias Cattaneo, Rocio Titiunik, Gonzalo Vazquez-Bare
 ###############################################################################
 
@@ -9,7 +9,6 @@ options(width=200)
 
 #install.packages("rdlocrand")
 library(rdlocrand)
-
 
 ###############################################################################
 ## Load data
@@ -60,6 +59,10 @@ tmp <- rdwinselect(R,X,obsstep=2)
 # Window selection with default options
 
 tmp <- rdwinselect(R,X)
+
+# Window selection with default options and symmetric windows
+
+tmp <- rdwinselect(R,X,wsymmetric=TRUE)
 
 # Window selection with specified window length and increments (replicate CFT)
 
@@ -117,7 +120,7 @@ filled.contour(xaxis,yaxis,t(zvalues),
 
 # Obtain 95 percent confidence interval for window [-.75 ; .75]
 
-tmp <- rdsensitivity(Y,R,wlist=seq(.75,2,by=.25),tlist=seq(0,20,by=1),ci=0.75)
+tmp <- rdsensitivity(Y,R,wlist=seq(.75,2,by=.25),tlist=seq(0,20,by=1),ci=c(-0.75,0.75))
 tmp$ci
 
 # rdsensitivity to calculate CI from within rdrandinf

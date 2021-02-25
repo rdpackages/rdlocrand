@@ -1,7 +1,7 @@
 ********************************************************************************
 * RDLOCRAND: Inference in RD designs under local randomization
 * rdwinselect_allcovs: auxiliary program to permute all covariates simultaneously
-* !version 0.7.2 2021-01-12
+* !version 0.8 2021-02-23
 * Authors: Matias Cattaneo, Rocio Titiunik, Gonzalo Vazquez-Bare
 * NOTE: runvar must be recentered at the cutoff before running
 ********************************************************************************

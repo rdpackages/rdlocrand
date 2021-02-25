@@ -1,11 +1,11 @@
-v 0.7.2
+v 0.8
 d STATA Package: RDLOCRAND
 d 
 d Authors: Matias D. Cattaneo, Department of Operations Research and Financial Engineering, Princeton University, cattaneo@princeton.edu
 d          Rocio Titiunik, Department of Politics, Princeton University, titiunik@princeton.edu
 d          Gonzalo Vazquez-Bare, Department of Economics, UC Santa Barbara, gvazquez@econ.ucsb.edu
 d
-d Date: 2021-01-12
+d Date: 2021-02-23
 d 
 f rdwinselect.ado
 f rdwinselect.sthlp
@@ -18,8 +18,10 @@ f rdrbounds.sthlp
 f rdrandinf_model.ado
 f rdwinselect_allcovs.ado
 f rdlocrand_confint.mo
+f rdlocrand_confint_check.mo
 f rdlocrand_findstep.mo
 f rdlocrand_findwobs.mo
+f rdlocrand_findwobs_sym.mo
 f rdlocrand_reclength.mo
 f rdlocrand_wlength.mo
 f rdlocrand_illustration.do

@@ -2,36 +2,39 @@
 ** RDLOCRAND Stata Package 
 ** Empirical Illustration
 ** Authors: Matias D. Cattaneo, Rocio Titiunik and Gonzalo Vazquez-Bare
-** Last update: 2021-01-12
+** Last update: 2021-02-23
 ********************************************************************************
 * net install rdlocrand, from(https://raw.githubusercontent.com/rdpackages/rdlocrand/master/stata) replace
 ********************************************************************************
-
 
 use rdlocrand_senate.dta, clear
 global covariates presdemvoteshlag1 population demvoteshlag1 ///
                   demvoteshlag2 demwinprv1 demwinprv2 dopen dmidterm
 
 				  
-**************************************************************************
+********************************************************************************
 ** Summary Stats
-**************************************************************************
+********************************************************************************
 
 describe $covariates
 summarize demmv $covariates
 
 
-**************************************************************************
+********************************************************************************
 ** rdwinselect
-**************************************************************************
+********************************************************************************
 
-** Replicate first table of Stata journal article (depcrecated default options)
+** Replicate first table of Stata journal article (deprecated default options - not recommended)
 
 rdwinselect demmv $covariates, cutoff(0) obsstep(2)
 
 ** Window selection with default options
 
 rdwinselect demmv $covariates, cutoff(0)
+
+** Window selection with default options and symmetric windows
+
+rdwinselect demmv $covariates, cutoff(0) wsym
 
 ** Window selection setting window length and increments (replicate CFT)
 
@@ -43,9 +46,9 @@ quietly rdwinselect demmv $covariates, wmin(.5) wstep(.125) ///
                     nwin(80) approximate plot
 
 					
-**************************************************************************
+********************************************************************************
 ** rdrandinf
-**************************************************************************
+********************************************************************************
 
 ** Randomization inference using recommended window
 
@@ -69,15 +72,15 @@ rdrandinf demvoteshfor2 demmv, statistic(all) wl(-.75) wr(.75) p(1)
 rdrandinf demvoteshfor2 demmv, wl(-.75) wr(.75) interfci(.05)
 
 
-**************************************************************************
+********************************************************************************
 ** rdsensitivity
-**************************************************************************
+********************************************************************************
 
 rdsensitivity demvoteshfor2 demmv, wlist(.75(.25)2) tlist(0(1)20) verbose
 
 ** Obtain 95 percent confidence interval for window [-.75 ; .75]
 
-rdsensitivity demvoteshfor2 demmv, wlist(.75(.25)2) tlist(0(1)20) nodots ci(.75)
+rdsensitivity demvoteshfor2 demmv, wlist(.75(.25)2) tlist(0(1)20) nodots ci(-.75 .75)
 
 ** Replicate contour plot
 
@@ -102,9 +105,9 @@ restore
 rdrandinf demvoteshfor2 demmv, wl(-.75) wr(.75) ci(.05 3(1)20)
 
 
-**************************************************************************
+********************************************************************************
 ** rdrbounds
-**************************************************************************
+********************************************************************************
 
 rdrbounds demvoteshfor2 demmv, expgamma(1.5 2 3) wlist(.5 .75 1) reps(1000)
 
@@ -113,9 +116,9 @@ rdrbounds demvoteshfor2 demmv, expgamma(1.5 2 3) wlist(.5 .75 1) reps(1000)
 rdrbounds demvoteshfor2 demmv, expgamma(1.5 2 3) wlist(.5 .75 1) reps(1000) fmpval
 
 
-**************************************************************************
+********************************************************************************
 ** rdrandinf with eval options
-**************************************************************************
+********************************************************************************
 
 qui sum demmv if abs(demmv)<=.75 & demmv>=0 & demmv!=. & demvoteshfor2!=.
 local mt = r(mean)

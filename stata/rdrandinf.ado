@@ -1,6 +1,6 @@
 ********************************************************************************
 * RDRANDINF: randomization inference in RD designs
-* !version 0.7.2 2021-01-12
+* !version 0.8 2021-02-23
 * Authors: Matias Cattaneo, Rocio Titiunik, Gonzalo Vazquez-Bare
 ********************************************************************************
 
@@ -31,9 +31,11 @@ program define rdrandinf, rclass sortpreserve
 													 wmin(numlist max=1)         ///
 													 wobs(numlist max=1)         ///
 													 wstep(numlist max=1)        ///
+													 WSYMmetric                  ///
 													 WMASSpoints                 ///
 													 NWindows(real 10)           ///
 													 rdwstat(string)             ///
+													 DROPMISSing                 ///
 													 APPROXimate                 ///
 													 rdwreps(real 1000)          ///
 													 level(real .15)             ///
@@ -207,12 +209,12 @@ program define rdrandinf, rclass sortpreserve
 			di as text "Calculating window..."
 			
 			if "`quietly'"==""{
-				rdwinselect `r' `covariates' if `touse', c(`cutoff') `obsmin_opt' `obsstep_opt' `wmin_opt' `wstep_opt' `wmasspoints' ///
-					`wobs_opt' `nwindows_opt' `rdwstat_opt' `approximate_opt' reps(`rdwreps') `level_opt' `plot_opt' `graph_opt'
+				rdwinselect `r' `covariates' if `touse', c(`cutoff') `obsmin_opt' `obsstep_opt' `wmin_opt' `wstep_opt' `wsymmetric' `wmasspoints' ///
+					`wobs_opt' `nwindows_opt' `rdwstat_opt' `approximate_opt' reps(`rdwreps') `level_opt' `dropmissing' `plot_opt' `graph_opt'
 			}
 			else {
-				qui rdwinselect `r' `covariates' if `touse', c(`cutoff') `obsmin_opt' `obsstep_opt' `wmin_opt' `wstep_opt' `wmasspoints' ///
-					`wobs_opt' `nwindows_opt' `approximate_opt' reps(`rdwreps') `level_opt' `plot_opt' `graph_opt'
+				qui rdwinselect `r' `covariates' if `touse', c(`cutoff') `obsmin_opt' `obsstep_opt' `wmin_opt' `wstep_opt' `wsymmetric' `wmasspoints' ///
+					`wobs_opt' `nwindows_opt' `approximate_opt' reps(`rdwreps') `level_opt' `dropmissing' `plot_opt' `graph_opt'
 			}	
 			if r(w_left)==. | r(w_right)==.{
 				di as error "rdwinselect could not find a recommended window"
@@ -238,7 +240,7 @@ program define rdrandinf, rclass sortpreserve
 		exit 198
 	}
 	
-	local inwindow "`r' >= float(`wl') & `r' <= float(`wr')"
+	local inwindow "float(`r') >= float(`wl') & float(`r') <= float(`wr')"
 	
 	if "`evall'"!="" & "`evalr'"=="" {
 		di as error "evalr not specified"
@@ -662,7 +664,7 @@ program define rdrandinf, rclass sortpreserve
 				mata: st_numscalar("p1_mata",mean(abs(B[.,1]):>=abs(`obs_stat1')))
 				mata: st_numscalar("p2_mata",mean(abs(B[.,2]):>=abs(`obs_stat2')))
 				mata: st_numscalar("p3_mata",mean(abs(B[.,3]):>=abs(`obs_stat3')))
-				matrix aux1 = (p1_mata,p2_mata,p3_mata)
+				matrix aux1 = (scalar(p1_mata),scalar(p2_mata),scalar(p3_mata))
 				matrix aux2 = (`obs_stat1',`obs_stat2',`obs_stat3')
 
 			}
@@ -688,7 +690,7 @@ program define rdrandinf, rclass sortpreserve
 				di as text "Randomization-based test complete."
 				
 				mata: st_numscalar("p1_mata",mean(abs(B[.,1]):>=abs(`obs_stat')))
-				local randp = p1_mata
+				local randp = scalar(p1_mata)
 			}
 		}
 	} 
@@ -778,28 +780,34 @@ program define rdrandinf, rclass sortpreserve
 	if "`ci'"!=""{
 		if "`fuzzy_stat'"!="tsls"{	
 			di "Calculating confidence interval..."
-			local wlength = `wr'-`cutoff'
-			qui rdsensitivity `Y' `runvar', p(`p') wlist(`wlength') `stat_opt_ci' `fuzzy_cond_ci' `tlist_opt' ci(`wlength' `ci_level') nodraw reps(`reps') 
-			local ci_lb = r(ci_lb)
-			local ci_ub = r(ci_ub)
-			if `ci_lb'!=. & `ci_ub'!=.{
-				di "Confidence interval obtained."
+			local wlength_r = `wr' - `cutoff'
+			local wlength_l = `wl' - `cutoff'
+			qui rdsensitivity `Y' `runvar', p(`p') wlist(`wlength_r') wlist_left(`wlength_l') `stat_opt_ci' `fuzzy_cond_ci' `tlist_opt' ci(`wlength_l' `wlength_r') ci_alpha(`ci_level') nodraw reps(`reps') 
+			mat CI = r(CI)
+			di as text _newline "Confidence interval for w = [" as res %9.3f `wl' _c as text " , " as res %9.3f `wr' as text "]" _newline
+			di as text "{hline 18}{c TT}{hline 23}"
+			di as text "{ralign 18:Statistic}{c |}" 		_col(16) "   [" (1-`ci_level')*100 "% Conf. Interval]"
+			di as text "{hline 18}{c +}{hline 23}"
+			di as text "{ralign 18:`statdisp'}{c |}" 		_col(22) as res %9.3f CI[1,1] _col(34) as res %9.3f CI[1,2]
+			if rowsof(CI)>1{
+				local jmax = rowsof(CI)
+				forvalues j = 2/`jmax'{
+					di as text _col(19) "{c |}" _col(22) as res %9.3f CI[`j',1] _col(34) as res %9.3f CI[`j',2]
+				}
 			}
-			else {
-				di as error "Consider a larger tlist in ci(alpha tlist) option."
-			}
+			di as text "{hline 18}{c BT}{hline 23}"
+		}
+		else{
+			di as text _newline "Confidence interval for selected window"
+			di as text "{hline 18}{c TT}{hline 23}"
+			di as text "{ralign 18:Statistic}{c |}" 		_col(16) "   [" (1-`ci_level')*100 "% Conf. Interval]"
+			di as text "{hline 18}{c +}{hline 23}"
+			di as text "{ralign 18:`statdisp'}{c |}" 		_col(22) as res %9.3f `ci_lb' _col(34) as res %9.3f `ci_ub'
+			di as text "{hline 18}{c BT}{hline 23}"
+			di "CI based on asymptotic approximation"   
+			mat CI = (`ci_lb',`ci_ub')
 		}
 
-		di as text _newline "Confidence interval for selected window"
-		di as text "{hline 18}{c TT}{hline 23}"
-		di as text "{ralign 18:Statistic}{c |}" 		_col(16) "   [" (1-`ci_level')*100 "% Conf. Interval]"
-		di as text "{hline 18}{c +}{hline 23}"
-		di as text "{ralign 18:`statdisp'}{c |}" 		_col(22) as res %9.3f `ci_lb' _col(34) as res %9.3f `ci_ub'
-		di as text "{hline 18}{c BT}{hline 23}"
-		
-		if "`fuzzy_stat'"=="tsls"{
-			di "CI based on asymptotic approximation"
-		}
 	}
 	
 	if `interfci'>0{
@@ -827,8 +835,7 @@ program define rdrandinf, rclass sortpreserve
 	return scalar wl = `wl'
 	
 	if "`ci'"!=""{
-		return scalar ci_lb = `ci_lb'
-		return scalar ci_ub = `ci_ub'
+		return matrix CI = CI
 	}
 	
 end
