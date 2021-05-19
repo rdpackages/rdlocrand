@@ -1,6 +1,6 @@
 ********************************************************************************
 * RDRANDINF: randomization inference in RD designs
-* !version 0.8 2021-02-23
+* !version 0.9 2021-05-18
 * Authors: Matias Cattaneo, Rocio Titiunik, Gonzalo Vazquez-Bare
 ********************************************************************************
 
@@ -314,7 +314,6 @@ program define rdrandinf, rclass sortpreserve
 			if "`statistic'"=="ksmirnov"{
 				local statdisp "Kolmogorov-Smirnov"
 				local stat_list "stat=r(stat)"
-				local right "right"
 				local stat_opt_ci "stat(`statistic')"
 			}
 			else if "`statistic'"=="ranksum"{
@@ -610,7 +609,7 @@ program define rdrandinf, rclass sortpreserve
 
 		if "`bernoulli'"==""{
 			local assimech "fixed margins"
-			qui permute `tr' `stat_list', reps(`reps') `right' nodots nowarn saving(`permbase'): ///
+			qui permute `tr' `stat_list', reps(`reps') nodots nowarn saving(`permbase'): ///
 					rdrandinf_model `Y_adj_null' `tr', stat(`stat_permute') `kwrd_opt' `fuzzy_cond'
 			
 			di as text "Randomization-based test complete."

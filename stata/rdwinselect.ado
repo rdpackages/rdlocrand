@@ -1,6 +1,6 @@
 ********************************************************************************
 * RDWINSELECT: window selection for randomization inference in RD
-* !version 0.8 2021-02-23
+* !version 0.9 2021-05-18
 * Authors: Matias Cattaneo, Rocio Titiunik, Gonzalo Vazquez-Bare
 ********************************************************************************
 
