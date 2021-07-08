@@ -1,6 +1,6 @@
 ********************************************************************************
 * RDSENSITIVITY: sensitivity analysis for randomization inference in RD designs
-* !version 0.9 2021-05-18
+* !version 1.0 2021-07-07
 * Authors: Matias Cattaneo, Rocio Titiunik, Gonzalo Vazquez-Bare
 ********************************************************************************
 
@@ -222,7 +222,7 @@ program define rdsensitivity, rclass sortpreserve
 		local matcols " `matcols' `""`wname'""'"	
 		
 		if "`dots'"==""{
-			di as text "w = [" as res %9.3f `w_left'+`cutoff' _c as text " , " as res %9.3f `w_right'+`cutoff' as text "]"
+			di as text "w = [" as res %9.3f `w_left'+`cutoff' _c as text " , " as res %9.3f `w_right'+`cutoff' as text "]" _newline
 		}
 		
 		if "`evalat'"=="means"{
@@ -241,12 +241,12 @@ program define rdsensitivity, rclass sortpreserve
 			mat Res[`row',`w'] = r(randpval)
 			
 			if "`dots'"==""{
-				set linesize 80
-				if mod(`count',`nt')!=0{
-					di _col(16) as text "." _cont
+				*if mod(`count',`nt')!=0{
+				if mod(`count',50)!=0{
+					di as text "." _cont
 				}
 				else{
-					di _col(16) as text "."
+					di as text ". `count'"
 				}
 			}
 			

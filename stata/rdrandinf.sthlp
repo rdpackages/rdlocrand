@@ -1,5 +1,5 @@
 {smcl}
-{* *! version 0.9 18May2021}{...}
+{* *! version 1.0 07Jul2021}{...}
 {viewerjumpto "Syntax" "rdrandinf##syntax"}{...}
 {viewerjumpto "Description" "rdrandinf##description"}{...}
 {viewerjumpto "Options" "rdrandinf##options"}{...}
@@ -40,7 +40,7 @@
 {cmd:wmin(}{it:# #}{cmd:)}
 {cmd:wobs(}{it:#}{cmd:)}
 {cmd:wstep(}{it:#}{cmd:)}
-{cmd:{opt wsym:metric}}
+{cmd:{opt wasym:metric}}
 {cmd:{opt wmass:points}}
 {cmd:{opt nw:indows}(}{it:#}{cmd:)}
 {cmd:rdwstat(}{it:stat_name}{cmd:)}
@@ -108,8 +108,8 @@ Default is {cmd:p(0)} (constant treatment effect model).{p_end}
 Default is {cmd:kernel(uniform)}.{p_end}
 
 {p 4 8}{cmd:fuzzy(}{it:fuzzy_var [fuzzy_stat]}{cmd:)} name of the endogenous treatment variable in fuzzy design. Options for statistic in fuzzy designs are:{p_end}
-{p 8 12}{cmd:ar} for Anderson-Rubin-type statistic (this is the default option),{p_end}
-{p 8 12}{cmd:tsls} for two-stage least squares (TSLS) statistic (only asymptotic approximation).{p_end}
+{p 8 12}{cmd:itt} for the intention-to-treat (ITT) statistic (this is the default option),{p_end}
+{p 8 12}{cmd:tsls} for the two-stage least squares (TSLS) statistic (asymptotic approximation only).{p_end}
 
 {dlgtab:Inference}
 
@@ -153,7 +153,7 @@ Default is {cmd:wobs(5)}.{p_end}
 {p 4 8}{cmd:wstep(}{it:#}{cmd:)} specifies the increment in window length (if {cmd:obsstep(}{it:#}{cmd:)} is not specified) by the companion command {help rdwinselect:rdwinselect}.
 Specifying both {cmd:wobs(}{it:#}{cmd:)} and {cmd:wstep(}{it:#}{cmd:)} returns an error.{p_end}
 
-{p 4 8}{cmd:{opt wsym:metric}} requires that windows be symmetrized around the cutoff (when {cmd:wobs(}{it:#}{cmd:)} is specified).{p_end}
+{p 4 8}{cmd:{opt wasym:metric}} allows for asymmetric windows around the cutoff (when {cmd:wobs(}{it:#}{cmd:)} is specified).{p_end}
 
 {p 4 8}{cmd:{opt wmass:points}} specifies that the running variable is discrete and each masspoint should be used as a window.{p_end}
 

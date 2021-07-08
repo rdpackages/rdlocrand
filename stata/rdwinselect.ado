@@ -1,6 +1,6 @@
 ********************************************************************************
 * RDWINSELECT: window selection for randomization inference in RD
-* !version 0.9 2021-05-18
+* !version 1.0 2021-07-07
 * Authors: Matias Cattaneo, Rocio Titiunik, Gonzalo Vazquez-Bare
 ********************************************************************************
 
@@ -14,7 +14,7 @@ program define rdwinselect, rclass sortpreserve
 												wmin(numlist max=2)   ///
 												wobs(numlist max=1)   ///
 												wstep(numlist max=1)  ///
-												WSYMmetric            ///
+												WASYMmetric           ///
 												WMASSpoints           ///
 												NWindows(real 10)     ///
 												DROPMISSing           ///
@@ -139,6 +139,7 @@ program define rdwinselect, rclass sortpreserve
 	
 	if r(max)>1{
 		di as text "Mass points detected in running variable"
+		di as text "You may use wmasspoints option for constructing windows at each mass point"
 	}
 
 	qui gen double `Wid' = .
@@ -160,6 +161,7 @@ program define rdwinselect, rclass sortpreserve
 		
 		if "`wmasspoints'"!=""{
 			local obsmin = 1
+			local wasymmetric "wasymmetric"
 		}
 		
 		if "`obsstep'"!=""{
@@ -167,7 +169,7 @@ program define rdwinselect, rclass sortpreserve
 			local wmin = scalar(wlength)
 		}
 		
-		if "`wsymmetric'"==""{
+		if "`wasymmetric'"!=""{
 			qui mata: rdlocrand_findwobs(`obsmin',1,`posl',`posr',"`runvar'","`dups'")
 			local wmin_left = scalar(wlength_left)
 			local posmin_left = poslist_left[1,1]
@@ -243,7 +245,7 @@ program define rdwinselect, rclass sortpreserve
 		qui count if `runvar'>=0 & float(`runvar')<=float(`wmin_right') & `touse'
 		local posr = min(`N_control' + 1 + r(N),_N)
 		
-		if "`wsymmetric'"==""{
+		if "`wasymmetric'"!=""{
 			mata: rdlocrand_findwobs(`wobs',`nwindows'-1,`posl',`posr',"`runvar'","`dups'")
 			mat wlist_left = (`wmin_left',wlist_left)
 			mat poslist_left = (`posmin_left',poslist_left)
@@ -397,7 +399,7 @@ program define rdwinselect, rclass sortpreserve
 	
 	forvalues j=1/`nmax' {	
 
-		if "`wsymmetric'"=="" & "`wstep'"=="" & "`obsstep'"==""{
+		if "`wasymmetric'"!="" & "`wstep'"=="" & "`obsstep'"==""{
 			local wlower = wlist_left[1,`j']
 			local wupper = wlist_right[1,`j']
 

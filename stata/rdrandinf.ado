@@ -1,6 +1,6 @@
 ********************************************************************************
 * RDRANDINF: randomization inference in RD designs
-* !version 0.9 2021-05-18
+* !version 1.0 2021-07-07
 * Authors: Matias Cattaneo, Rocio Titiunik, Gonzalo Vazquez-Bare
 ********************************************************************************
 
@@ -26,12 +26,12 @@ program define rdrandinf, rclass sortpreserve
 													 BErnoulli(string)           ///
 													 reps(integer 1000)          ///
 													 seed(integer 666)           ///
-													 COVariates(namelist)        ///		 
+													 COVariates(namelist)        ///
 													 obsmin(numlist max=1)       ///
 													 wmin(numlist max=1)         ///
 													 wobs(numlist max=1)         ///
 													 wstep(numlist max=1)        ///
-													 WSYMmetric                  ///
+													 WASYMmetric                 ///
 													 WMASSpoints                 ///
 													 NWindows(real 10)           ///
 													 rdwstat(string)             ///
@@ -209,11 +209,11 @@ program define rdrandinf, rclass sortpreserve
 			di as text "Calculating window..."
 			
 			if "`quietly'"==""{
-				rdwinselect `r' `covariates' if `touse', c(`cutoff') `obsmin_opt' `obsstep_opt' `wmin_opt' `wstep_opt' `wsymmetric' `wmasspoints' ///
+				rdwinselect `r' `covariates' if `touse', c(`cutoff') `obsmin_opt' `obsstep_opt' `wmin_opt' `wstep_opt' `wasymmetric' `wmasspoints' ///
 					`wobs_opt' `nwindows_opt' `rdwstat_opt' `approximate_opt' reps(`rdwreps') `level_opt' `dropmissing' `plot_opt' `graph_opt'
 			}
 			else {
-				qui rdwinselect `r' `covariates' if `touse', c(`cutoff') `obsmin_opt' `obsstep_opt' `wmin_opt' `wstep_opt' `wsymmetric' `wmasspoints' ///
+				qui rdwinselect `r' `covariates' if `touse', c(`cutoff') `obsmin_opt' `obsstep_opt' `wmin_opt' `wstep_opt' `wasymmetric' `wmasspoints' ///
 					`wobs_opt' `nwindows_opt' `approximate_opt' reps(`rdwreps') `level_opt' `dropmissing' `plot_opt' `graph_opt'
 			}	
 			if r(w_left)==. | r(w_right)==.{
@@ -343,10 +343,10 @@ program define rdrandinf, rclass sortpreserve
 			local fuzzy_treat "`1'"
 			local fuzzy_stat "`2'"
 			
-			if "`fuzzy_stat'"=="ar"|"`fuzzy_stat'"==""{
+			if "`fuzzy_stat'"=="ar"|"`fuzzy_stat'"==""|"`fuzzy_stat'"=="itt"{
 				local stat_permute "ar"
 				local stat_list "stat=r(stat)"
-				local statdisp "Anderson-Rubin"
+				local statdisp "ITT"
 				local fuzzy_cond "endogtr(`fuzzy_treat')"
 				local fuzzy_cond_ci "fuzzy(`fuzzy_treat')"
 
@@ -577,7 +577,7 @@ program define rdrandinf, rclass sortpreserve
 			}
 			else {
 				if `p'==0{
-					ivregress 2sls `Y_fuzzy' (`fuzzy_treat'=`tr') `kweights_opt', r
+					ivregress 2sls `Y_fuzzy' (`fuzzy_treat'=`tr') `kweights_opt', robust
 					local obs_stat = _b[`fuzzy_treat']
 					local asy_p = 2*normal(-abs(_b[`fuzzy_treat']/_se[`fuzzy_treat']))
 					local power = 1-normal(1.96-`delta'/_se[`fuzzy_treat'])+normal(-1.96-`delta'/_se[`fuzzy_treat'])				

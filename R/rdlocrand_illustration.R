@@ -1,6 +1,6 @@
 ###############################################################################
 # rdlocrand: illustration file
-# !version 0.8 23-Feb-2021
+# !version 0.9 07-Jul-2021
 # Authors: Matias Cattaneo, Rocio Titiunik, Gonzalo Vazquez-Bare
 ###############################################################################
 
@@ -62,7 +62,7 @@ tmp <- rdwinselect(R,X)
 
 # Window selection with default options and symmetric windows
 
-tmp <- rdwinselect(R,X,wsymmetric=TRUE)
+tmp <- rdwinselect(R,X,wasymmetric=TRUE)
 
 # Window selection with specified window length and increments (replicate CFT)
 

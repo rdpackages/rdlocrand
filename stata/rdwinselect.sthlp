@@ -1,5 +1,5 @@
 {smcl}
-{* *! version 0.9 18May2021}{...}
+{* *! version 1.0 07Jul2021}{...}
 {viewerjumpto "Syntax" "rdwinselect##syntax"}{...}
 {viewerjumpto "Description" "rdwinselect##description"}{...}
 {viewerjumpto "Options" "rdwinselect##options"}{...}
@@ -23,7 +23,7 @@
 {cmd:wmin(}{it:# #}{cmd:)}
 {cmd:wobs(}{it:#}{cmd:)}
 {cmd:wstep(}{it:#}{cmd:)}
-{cmd:{opt wsym:metric}}
+{cmd:{opt wasym:metric}}
 {cmd:{opt wmass:points}}
 {cmd:{opt nw:indows}(}{it:#}{cmd:)}
 {cmd:{opt dropmiss:ing}}
@@ -84,7 +84,7 @@ Default is {cmd:wobs(5)}.{p_end}
 {p 4 8}{cmd:wstep(}{it:#}{cmd:)} specifies the increment in window length.
 Specifying both {cmd:wobs(}{it:#}{cmd:)} and {cmd:wstep(}{it:#}{cmd:)} returns an error.{p_end}
 
-{p 4 8}{cmd:{opt wsym:metric}} requires that windows be symmetrized around the cutoff (when {cmd:wobs(}{it:#}{cmd:)} is specified).{p_end}
+{p 4 8}{cmd:{opt wasym:metric}} allows for asymmetric windows around the cutoff (when {cmd:wobs(}{it:#}{cmd:)} is specified).{p_end}
 
 {p 4 8}{cmd:{opt wmass:points}} specifies that the running variable is discrete and each masspoint should be used as a window.{p_end}
 
