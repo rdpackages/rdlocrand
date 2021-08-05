@@ -8,16 +8,13 @@ This work was supported in part by the National Science Foundation through grant
 
 https://rdpackages.github.io/rdlocrand
 
-## Stata Implementation
+## Queries and Requests
 
-To install/update in Stata type:
-```
-net install rdlocrand, from(https://raw.githubusercontent.com/rdpackages/rdlocrand/master/stata) replace
-```
+Please email: [rdpackages@googlegroups.com](mailto:rdpackages@googlegroups.com)
 
-- Help: [rdrandinf](stata/rdrandinf.pdf), [rdwinselect](stata/rdwinselect.pdf), [rdsensitivity](stata/rdsensitivity.pdf), [rdrbounds](stata/rdrbounds.pdf).
+## Python Implementation
 
-- Replication: [do-file](stata/rdlocrand_illustration.do), [senate data](stata/rdlocrand_senate.dta).
+Coming soon.
 
 ## R Implementation
 
@@ -29,6 +26,18 @@ install.packages('rdlocrand')
 - Help: [R Manual](https://cran.r-project.org/web/packages/rdlocrand/rdlocrand.pdf), [CRAN repository](https://cran.r-project.org/package=rdlocrand).
 
 - Replication: [R-script](R/rdlocrand_illustration.R), [senate data](R/rdlocrand_senate.csv). [R illustration](R/rdlocrand_illustration.pdf).
+
+## Stata Implementation
+
+To install/update in Stata type:
+```
+net install rdlocrand, from(https://raw.githubusercontent.com/rdpackages/rdlocrand/master/stata) replace
+```
+
+- Help: [rdrandinf](stata/rdrandinf.pdf), [rdwinselect](stata/rdwinselect.pdf), [rdsensitivity](stata/rdsensitivity.pdf), [rdrbounds](stata/rdrbounds.pdf).
+
+- Replication: [do-file](stata/rdlocrand_illustration.do), [senate data](stata/rdlocrand_senate.dta).
+
 
 ## References
 
