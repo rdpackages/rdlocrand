@@ -1,5 +1,5 @@
 {smcl}
-{* *! version 1.0 07Jul2021}{...}
+{* *! version 1.1 21Jan2022}{...}
 {viewerjumpto "Syntax" "rdwinselect##syntax"}{...}
 {viewerjumpto "Description" "rdwinselect##description"}{...}
 {viewerjumpto "Options" "rdwinselect##options"}{...}

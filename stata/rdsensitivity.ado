@@ -1,6 +1,6 @@
 ********************************************************************************
 * RDSENSITIVITY: sensitivity analysis for randomization inference in RD designs
-* !version 1.0 2021-07-07
+* !version 1.1 2022-01-21
 * Authors: Matias Cattaneo, Rocio Titiunik, Gonzalo Vazquez-Bare
 ********************************************************************************
 

@@ -1,6 +1,6 @@
 ********************************************************************************
 * RDLOCRAND package: auxiliary functions
-* !version 1.0 2021-07-07
+* !version 1.1 2022-01-21
 * Authors: Matias Cattaneo, Rocio Titiunik, Gonzalo Vazquez-Bare
 ********************************************************************************
 
@@ -20,8 +20,8 @@ void rdlocrand_findwobs(real scalar wobs,
 			  runvar,dupsvar)
 {
 
-	st_view(R=.,.,runvar,"`touse'")
-	st_view(dups=.,.,dupsvar,"`touse'")
+	st_view(R=.,.,runvar,st_local("touse"))
+	st_view(dups=.,.,dupsvar,st_local("touse"))
 
 	N = length(R)
 	Nc = sum(R:<0)
@@ -105,8 +105,8 @@ void rdlocrand_findwobs_sym(real scalar wobs,
 			  runvar,dupsvar)
 {
 
-	st_view(R=.,.,runvar,"`touse'")
-	st_view(dups=.,.,dupsvar,"`touse'")
+	st_view(R=.,.,runvar,st_local("touse"))
+	st_view(dups=.,.,dupsvar,st_local("touse"))
 
 	N = length(R)
 	Nc = sum(R:<0)

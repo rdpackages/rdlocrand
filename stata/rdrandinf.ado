@@ -1,6 +1,6 @@
 ********************************************************************************
 * RDRANDINF: randomization inference in RD designs
-* !version 1.0 2021-07-07
+* !version 1.1 2022-01-21
 * Authors: Matias Cattaneo, Rocio Titiunik, Gonzalo Vazquez-Bare
 ********************************************************************************
 
@@ -322,7 +322,7 @@ program define rdrandinf, rclass sortpreserve
 				local stat_opt_ci "stat(`statistic')"
 			}
 			else if "`statistic'"=="all"{
-				local stat_list "stat1=abs(r(stat1)) stat2=r(stat2) stat3=abs(r(stat3))"
+				local stat_list "stat1=r(stat1) stat2=r(stat2) stat3=r(stat3)"
 				local right "right"
 				local stat_opt_ci "stat(`statistic')"
 			}
@@ -342,15 +342,15 @@ program define rdrandinf, rclass sortpreserve
 			tokenize `fuzzy'
 			local fuzzy_treat "`1'"
 			local fuzzy_stat "`2'"
-			
+
 			if "`fuzzy_stat'"=="ar"|"`fuzzy_stat'"==""|"`fuzzy_stat'"=="itt"{
 				local stat_permute "ar"
 				local stat_list "stat=r(stat)"
 				local statdisp "ITT"
 				local fuzzy_cond "endogtr(`fuzzy_treat')"
 				local fuzzy_cond_ci "fuzzy(`fuzzy_treat')"
-
 			}
+			
 			else if "`fuzzy_stat'"=="tsls"{
 				local stat_permute "wald"
 				local stat_list "stat=r(stat)"
@@ -553,12 +553,12 @@ program define rdrandinf, rclass sortpreserve
 				}
 			}
 		}
-		
+	
 		if "`fuzzy'"!=""{
 			tempvar Y_fuzzy
 			gen double `Y_fuzzy' = `Y'-`nulltau'*`fuzzy_treat'
 			
-			if "`fuzzy_stat'"=="ar"|"`fuzzy_stat'"==""{
+			if "`fuzzy_stat'"=="ar"|"`fuzzy_stat'"==""|"`fuzzy_stat'"=="itt"{
 				if `p'==0{
 					reg `Y_fuzzy' `tr' `kweights_opt', vce(hc2)
 					local obs_stat = _b[`tr']
