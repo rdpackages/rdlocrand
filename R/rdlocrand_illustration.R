@@ -1,6 +1,6 @@
 ###############################################################################
 # rdlocrand: illustration file
-# !version 0.9 07-Jul-2021
+# !version 1.0 21-Jun-2022
 # Authors: Matias Cattaneo, Rocio Titiunik, Gonzalo Vazquez-Bare
 ###############################################################################
 

@@ -1,5 +1,5 @@
 {smcl}
-{* *! version 1.1 21Jan2022}{...}
+{* *! version 1.2 21Jun2022}{...}
 {viewerjumpto "Syntax" "rdrandinf##syntax"}{...}
 {viewerjumpto "Description" "rdrandinf##description"}{...}
 {viewerjumpto "Options" "rdrandinf##options"}{...}
@@ -51,6 +51,7 @@
 {cmd:plot}
 {cmd:graph_options(}{it:graphopts}{cmd:)}
 {cmd:obsstep(}{it:#}{cmd:)}
+{cmd:{opt first:stage}}
 {cmd:{opt qui:etly}}
 ]{p_end}
 
@@ -110,6 +111,8 @@ Default is {cmd:kernel(uniform)}.{p_end}
 {p 4 8}{cmd:fuzzy(}{it:fuzzy_var [fuzzy_stat]}{cmd:)} name of the endogenous treatment variable in fuzzy design. Options for statistic in fuzzy designs are:{p_end}
 {p 8 12}{cmd:itt} for the intention-to-treat (ITT) statistic (this is the default option),{p_end}
 {p 8 12}{cmd:tsls} for the two-stage least squares (TSLS) statistic (asymptotic approximation only).{p_end}
+
+{p 4 8}{cmd:{opt first:stage}} shows output from first step regression when using TSLS.{p_end}
 
 {dlgtab:Inference}
 

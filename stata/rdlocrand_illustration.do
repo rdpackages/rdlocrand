@@ -2,7 +2,7 @@
 ** RDLOCRAND Stata Package 
 ** Empirical Illustration
 ** Authors: Matias D. Cattaneo, Rocio Titiunik and Gonzalo Vazquez-Bare
-** Last update: 2021-01-21
+** Last update: 2022-06-22
 ********************************************************************************
 * net install rdlocrand, from(https://raw.githubusercontent.com/rdpackages/rdlocrand/master/stata) replace
 ********************************************************************************

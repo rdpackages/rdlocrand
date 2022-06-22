@@ -1,9 +1,9 @@
 ********************************************************************************
 * rdrandinf_model: auxiliary program to permute statistics
-* !version 1.1 2022-01-21
 * Authors: Matias Cattaneo, Rocio Titiunik, Gonzalo Vazquez-Bare
 * NOTE: runvar must be recentered at the cutoff before running
 ********************************************************************************
+*!version 1.2 2022-06-21
 
 capture program drop rdrandinf_model
 program define rdrandinf_model, rclass

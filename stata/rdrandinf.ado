@@ -1,8 +1,8 @@
 ********************************************************************************
 * RDRANDINF: randomization inference in RD designs
-* !version 1.1 2022-01-21
 * Authors: Matias Cattaneo, Rocio Titiunik, Gonzalo Vazquez-Bare
 ********************************************************************************
+*!version 1.2 2022-06-21
 
 version 13
 
@@ -42,6 +42,7 @@ program define rdrandinf, rclass sortpreserve
 													 plot                        ///
 													 graph_options(string)       ///
 													 obsstep(numlist max=1)      ///
+													 FIRSTstage					 ///
 													 QUIetly]
 	
 	tempvar tr
@@ -577,6 +578,8 @@ program define rdrandinf, rclass sortpreserve
 			}
 			else {
 				if `p'==0{
+					reg `fuzzy_treat' `tr' `kweights_opt', robust
+					est store first_stage, title("First stage regression")
 					ivregress 2sls `Y_fuzzy' (`fuzzy_treat'=`tr') `kweights_opt', robust
 					local obs_stat = _b[`fuzzy_treat']
 					local asy_p = 2*normal(-abs(_b[`fuzzy_treat']/_se[`fuzzy_treat']))
@@ -589,6 +592,8 @@ program define rdrandinf, rclass sortpreserve
 						capture gen _runpoly_all`k'=`runvar'^`k'
 						gen _interpoly_`k'=_runpoly_all`k'*`tr'
 					}
+					reg `fuzzy_treat' `tr' _runpoly_all* _interpoly_* `kweights_opt', robust
+					est store first_stage, title("First stage regression")
 					ivregress 2sls `Y_fuzzy' _runpoly_all* _interpoly_* (`fuzzy_treat'=`tr') `kweights_opt', robust
 					local obs_stat = _b[`fuzzy_treat']
 					local asy_p = 2*normal(-abs(_b[`fuzzy_treat']/_se[`fuzzy_treat']))
@@ -744,6 +749,10 @@ program define rdrandinf, rclass sortpreserve
 	di as text "{ralign 18:S.D. of outcome}"				_col(19) "{c |}" 	_col(22) as res %9.3f `s_left'		_col(33) %10.3f `s_right'		_col(51) as text "H0:       tau = " as res %14.3f `nulltau'
 	di as text "{ralign 18:Window}"							_col(19) "{c |}" 	_col(22) as res %9.3f `wl'			_col(33) %10.3f `wr'			_col(51) as text "Randomization = " as res "{ralign 12: `assimech'}"
 
+	if "`statdisp'"=="TSLS" & "`firststage'"!=""{
+		est replay first_stage
+	}
+	
 	di as text _newline "Outcome: " as res "`Y'" as text ". Running variable: " as res "`r'" as text "."
 
 	di as text "{hline 18}{c TT}{hline 61}"

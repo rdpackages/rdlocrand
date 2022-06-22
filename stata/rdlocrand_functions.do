@@ -1,6 +1,6 @@
 ********************************************************************************
 * RDLOCRAND package: auxiliary functions
-* !version 1.1 2022-01-21
+* !version 1.2 2022-06-21
 * Authors: Matias Cattaneo, Rocio Titiunik, Gonzalo Vazquez-Bare
 ********************************************************************************
 
