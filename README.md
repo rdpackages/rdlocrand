@@ -14,7 +14,14 @@ Please email: [rdpackages@googlegroups.com](mailto:rdpackages@googlegroups.com)
 
 ## Python Implementation
 
-Coming soon.
+To install/update in R type:
+```
+pip install rdlocrand
+```
+
+- Help: [PyPI repository](https://pypi.org/project/rdlocrand/).
+
+- Replication: [py-script](Python/rdlocrand_illustration.py), [senate data](Python/rdlocrand_senate.csv).
 
 ## R Implementation
 
