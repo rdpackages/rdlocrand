@@ -1,0 +1,15 @@
+README.md
+pyproject.toml
+setup.cfg
+src/rdlocrand/__init__.py
+src/rdlocrand/rdlocrand_fun.py
+src/rdlocrand/rdlocrand_illustration.py
+src/rdlocrand/rdrandinf.py
+src/rdlocrand/rdrbounds.py
+src/rdlocrand/rdsensitivity.py
+src/rdlocrand/rdwinselect.py
+src/rdlocrand.egg-info/PKG-INFO
+src/rdlocrand.egg-info/SOURCES.txt
+src/rdlocrand.egg-info/dependency_links.txt
+src/rdlocrand.egg-info/requires.txt
+src/rdlocrand.egg-info/top_level.txt
