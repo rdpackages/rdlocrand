@@ -266,8 +266,8 @@ def rdwinselect(R, X=None, cutoff=0, obsmin=None, wmin=None, wobs=None, wstep=No
             poslist_right = np.concatenate(([posmin_right], np.array(tmp['poslist_right'])-1))
         else:
             wlist = findwobs_sym(wobs, nwindows - 1, posl, posr, Rc, dups)
-            wlist_right = np.concatenate((wmin_right, wlist))
-            wlist_left = np.concatenate((wmin_left, wlist))
+            wlist_right = np.concatenate(([wmin_right], wlist))
+            wlist_left = np.concatenate(([wmin_left], wlist))
     
     nmax = min(nwindows, len(wlist_right))
     if nmax < nwindows:

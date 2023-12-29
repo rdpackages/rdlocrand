@@ -1,6 +1,6 @@
 Metadata-Version: 2.1
 Name: rdlocrand
-Version: 1.0.0
+Version: 1.0.1
 Summary: Local Randomization Methods for RD Designs
 Home-page: https://rdpackages.github.io/rdlocrand/
 Author: Ricardo Masini
@@ -11,6 +11,11 @@ Classifier: License :: OSI Approved :: MIT License
 Classifier: Operating System :: OS Independent
 Requires-Python: >=3.6
 Description-Content-Type: text/markdown
+Requires-Dist: numpy
+Requires-Dist: pandas>=2.0.0
+Requires-Dist: scipy
+Requires-Dist: statsmodels>=0.14.0
+Requires-Dist: linearmodels>=4.31
 
 # rdlocrand: Local Randomization Methods for RD Designs
 

@@ -3,7 +3,6 @@ pyproject.toml
 setup.cfg
 src/rdlocrand/__init__.py
 src/rdlocrand/rdlocrand_fun.py
-src/rdlocrand/rdlocrand_illustration.py
 src/rdlocrand/rdrandinf.py
 src/rdlocrand/rdrbounds.py
 src/rdlocrand/rdsensitivity.py

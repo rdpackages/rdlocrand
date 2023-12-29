@@ -13,7 +13,8 @@ from rdlocrand import *
 ## Load data
 ###############################################################################
 
-data = pd.read_csv("rdlocrand_senate.csv")
+#data = pd.read_csv("rdlocrand_senate.csv")
+data = pd.read_csv("Python/rdlocrand_senate.csv")
 
 # Select predetermined covariates to be used for window selector
 
