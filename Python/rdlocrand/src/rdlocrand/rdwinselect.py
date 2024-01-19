@@ -225,13 +225,13 @@ def rdwinselect(R, X=None, cutoff=0, obsmin=None, wmin=None, wobs=None, wstep=No
     
     else:
         if np.isscalar(wmin):
-            wmin_right = wmin
-            wmin_left = -wmin
+            wmin_right = [wmin]
+            wmin_left = [-wmin]
             posmin_right = n0 + np.sum(np.logical_and(Rc <= wmin, Rc >= 0))
             posmin_left = n0 - np.sum(np.logical_and(Rc < 0, Rc >= -wmin)) + 1
         elif len(wmin) == 2:
-            wmin_left = wmin[0]
-            wmin_right = wmin[1]
+            wmin_left = [wmin[0]]
+            wmin_right = [wmin[1]]
             posmin_right = n0 + np.sum(np.logical_and(Rc <= wmin_right, Rc >= 0))
             posmin_left = n0 - np.sum(np.logical_and(Rc < 0, Rc >= wmin_left)) + 1
         else:
@@ -266,8 +266,8 @@ def rdwinselect(R, X=None, cutoff=0, obsmin=None, wmin=None, wobs=None, wstep=No
             poslist_right = np.concatenate(([posmin_right], np.array(tmp['poslist_right'])-1))
         else:
             wlist = findwobs_sym(wobs, nwindows - 1, posl, posr, Rc, dups)
-            wlist_right = np.concatenate(([wmin_right], wlist))
-            wlist_left = np.concatenate(([wmin_left], wlist))
+            wlist_right = np.concatenate((wmin_right, wlist))
+            wlist_left = np.concatenate((wmin_left, wlist))
     
     nmax = min(nwindows, len(wlist_right))
     if nmax < nwindows:
