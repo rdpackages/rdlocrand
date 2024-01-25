@@ -4,7 +4,7 @@
 import pandas as pd
 import numpy as np
 import warnings
-from scipy.stats import norm, binom_test
+from scipy.stats import norm, binomtest
 import statsmodels.api as sm
 import matplotlib.pyplot as plt
 from rdlocrand.rdlocrand_fun import findwobs, findwobs_sym, findstep, hotelT2, rdrandinf_model
@@ -393,7 +393,7 @@ def rdwinselect(R, X=None, cutoff=0, obsmin=None, wmin=None, wobs=None, wstep=No
 
             # Binomial test
 
-            p_value = binom_test(np.sum(Dw), len(Dw), p=0.5)
+            p_value = binomtest(int(np.sum(Dw)), len(Dw), p=0.5).pvalue
             table_rdw[j, 2] = p_value
 
             if X is not None:
