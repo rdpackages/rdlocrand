@@ -247,10 +247,10 @@ def rdwinselect(R, X=None, cutoff=0, obsmin=None, wmin=None, wobs=None, wstep=No
         wlist_right = np.linspace(wmin[0], wmin[0] + wstep * (nwindows - 1), num=nwindows)
         wlist_left = None
     elif wstep is not None:
-        wmax_left = max(wmin_left - wstep * (nwindows - 1), min(Rc))
-        wmax_right = min(wmin_right + wstep * (nwindows - 1), max(Rc))
-        wlist_left = np.sort(np.arange(wmax_left, wmin_left+wstep, step=wstep))[::-1]
-        wlist_right = np.arange(wmin_right, wmax_right + wstep, step=wstep)
+        wmax_left = max(wmin_left[0] - wstep * (nwindows - 1), min(Rc))
+        wmax_right = min(wmin_right[0] + wstep * (nwindows - 1), max(Rc))
+        wlist_left = np.sort(np.arange(wmax_left, wmin_left[0]+wstep, step=wstep))[::-1]
+        wlist_right = np.arange(wmin_right[0], wmax_right + wstep, step=wstep)
     else:
         if wobs is None:
             wobs = 5
@@ -282,8 +282,8 @@ def rdwinselect(R, X=None, cutoff=0, obsmin=None, wmin=None, wobs=None, wstep=No
     table_sumstats = np.empty((5, 2))
     table_sumstats[0, :] = [n0, n1]
 
-    qq0 = np.round(np.quantile(np.abs(Rc[D == 0]), q=[0.01, 0.05, 0.1, 0.2], interpolation='lower'), 5)
-    qq1 = np.round(np.quantile(Rc[D == 1], q=[0.01, 0.05, 0.1, 0.2], interpolation='lower'), 5)
+    qq0 = np.round(np.quantile(np.abs(Rc[D == 0]), q=[0.01, 0.05, 0.1, 0.2], method='lower'), 5)
+    qq1 = np.round(np.quantile(Rc[D == 1], q=[0.01, 0.05, 0.1, 0.2], method='lower'), 5)
 
     n0_q1 = np.sum((Rc >= -qq0[0]) & (Rc < 0))
     n0_q2 = np.sum((Rc >= -qq0[1]) & (Rc < 0))

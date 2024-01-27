@@ -1,5 +1,5 @@
-numpy
-pandas>=2.0.0
-scipy
-statsmodels>=0.14.0
-linearmodels>=4.31
+numpy>=1.26.3
+pandas>=2.2.0
+scipy>=1.12.0
+statsmodels>=0.14.1
+linearmodels>=5.4
