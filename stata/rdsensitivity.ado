@@ -315,9 +315,9 @@ program define rdsensitivity, rclass sortpreserve
 	qui {
 		svmat Rows, name(T)
 		expand `nw'
-		sort T, stable
+		sort T1, stable
 		svmat Cols, name(W)
-		replace W = W[_n-`nw'] if W == .
+		replace W1 = W1[_n-`nw'] if W1 == .
 
 		gen pvalue = .
 
