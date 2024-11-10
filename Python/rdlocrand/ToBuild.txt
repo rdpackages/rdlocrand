@@ -1,5 +1,6 @@
 # change the version number in the config file (.cfg)
 # version = X.X.X
+# NEEDED: pip install build
 
 # To build the package, type (where the .toml file is located)
 python3 -m build

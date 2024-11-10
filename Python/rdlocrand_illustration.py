@@ -13,14 +13,14 @@ from rdlocrand import *
 ## Load data
 ###############################################################################
 
-#data = pd.read_csv("rdlocrand_senate.csv")
-data = pd.read_csv("Python/rdlocrand_senate.csv")
+data = pd.read_csv("rdlocrand_senate.csv")
 
 # Select predetermined covariates to be used for window selector
 
 X = data[["presdemvoteshlag1", "population", "demvoteshlag1", "demvoteshlag2",
           "demwinprv1", "demwinprv2", "dopen", "dmidterm", "dpresdem"]]
 
+X = X.astype({'population': 'float64'})
 X.loc[:,'population'] = X['population'].div(1000000)
 
 # Assign names to the covariates

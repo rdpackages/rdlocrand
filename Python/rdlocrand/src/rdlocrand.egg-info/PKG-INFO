@@ -1,17 +1,17 @@
 Metadata-Version: 2.1
 Name: rdlocrand
-Version: 1.0.4
+Version: 1.0.5
 Summary: Local Randomization Methods for RD Designs
 Home-page: https://rdpackages.github.io/rdlocrand/
-Author: Ricardo Masini
-Author-email: rmasini@ucdavis.edu
+Author: Matias D. Cattaneo, Ricardo Masini
+Author-email: cattaneo@princeton.edu
 Project-URL: Bug Tracker, https://github.com/rdpackages/rdlocrand/issues
 Classifier: Programming Language :: Python :: 3
 Classifier: License :: OSI Approved :: MIT License
 Classifier: Operating System :: OS Independent
-Requires-Python: >=3.6
+Requires-Python: >=3.8
 Description-Content-Type: text/markdown
-Requires-Dist: numpy>=1.26.3
+Requires-Dist: numpy>=2.1.0
 Requires-Dist: pandas>=2.2.0
 Requires-Dist: scipy>=1.12.0
 Requires-Dist: statsmodels>=0.14.1
@@ -29,14 +29,37 @@ The regression discontinuity (RD) design is a popular quasi-experimental design 
 
 For more details, and related Stata and R packages useful for the analysis of RD designs, visit [https://rdpackages.github.io/](https://rdpackages.github.io/).
 
-## References
-1. Cattaneo, M.D., B. Frandsen, and R. Titiunik. (2015). [Randomization Inference in the Regression Discontinuity Design: An Application to Party Advantages in the U.S. Senate](https://rdpackages.github.io/references/Cattaneo-Frandsen-Titiunik_2015_JCI.pdf). *Journal of Causal Inference* 3(1): 1-24.
-2. Cattaneo, M.D., R. Titiunik, and G. Vazquez-Bare. (2016). [Inference in Regression Discontinuity Designs under Local Randomization](https://rdpackages.github.io/references/Cattaneo-Titiunik-VazquezBare_2016_Stata.pdf). *Stata Journal* 16(2): 331-367.
-3. Cattaneo, M.D., R. Titiunik, and G. Vazquez-Bare. (2017). [Comparing Inference Approaches for RD Designs: A Reexamination of the Effect of Head Start on Child Mortality](https://rdpackages.github.io/references/Cattaneo-Titiunik-VazquezBare_2017_JPAM.pdf). *Journal of Policy Analysis and Management* 36(3): 643-681.
-4. Rosenbaum, P. (2002). *Observational Studies*. Springer.
-
 ## Author
 Matias Cattaneo, Princeton University. Email: cattaneo@princeton.edu
+
 Rocio Titiunik, Princeton University. Email: titiunik@princeton.edu
+
 Ricardo Masini, UC Davis. Email: rmasini@ucdavis.edu
+
 Gonzalo Vazquez-Bare, UC Santa Barbara. Email: gvazquez@econ.ucsb.edu
+
+## Installation
+
+To install/update use pip
+```
+pip install rdlocrand
+```
+
+# Usage
+```
+from rdlocrand import rdrandinf, rdwinselect, rdsensitivity, rdrbounds
+```
+
+## References
+
+For overviews and introductions, see [rdpackages website](https://rdpackages.github.io).
+
+- Cattaneo, M.D., B. Frandsen, and R. Titiunik. (2015). [Randomization Inference in the Regression Discontinuity Design: An Application to Party Advantages in the U.S. Senate](https://rdpackages.github.io/references/Cattaneo-Frandsen-Titiunik_2015_JCI.pdf). *Journal of Causal Inference* 3(1): 1-24.
+
+- Cattaneo, M.D., R. Titiunik, and G. Vazquez-Bare. (2016). [Inference in Regression Discontinuity Designs under Local Randomization](https://rdpackages.github.io/references/Cattaneo-Titiunik-VazquezBare_2016_Stata.pdf). *Stata Journal* 16(2): 331-367.
+
+- Cattaneo, M.D., R. Titiunik, and G. Vazquez-Bare. (2017). [Comparing Inference Approaches for RD Designs: A Reexamination of the Effect of Head Start on Child Mortality](https://rdpackages.github.io/references/Cattaneo-Titiunik-VazquezBare_2017_JPAM.pdf). *Journal of Policy Analysis and Management* 36(3): 643-681.
+
+- Rosenbaum, P. (2002). *Observational Studies*. Springer.
+
+<br><br>

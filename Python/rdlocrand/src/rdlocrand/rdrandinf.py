@@ -4,6 +4,7 @@
 import numpy as np
 from scipy.stats import norm
 import statsmodels.api as sm
+from scipy.special import comb
 from linearmodels import IV2SLS
 from rdlocrand.rdwinselect import rdwinselect
 from rdlocrand.rdlocrand_fun import rdrandinf_model, find_CI
@@ -461,7 +462,7 @@ def rdrandinf(Y, R, cutoff=0, wl=None, wr=None, statistic='diffmeans', p=0, eval
     
     if fuzzy_stat != 'wald':
         if bernoulli is None:
-            max_reps = np.math.comb(n_w, n1_w)
+            max_reps = comb(n_w, n1_w)
             reps = min(reps, max_reps)
             if max_reps < reps:
                 print(f'Chosen no. of reps > total no. of permutations.\nreps set to {reps}.')
