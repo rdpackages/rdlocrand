@@ -2,8 +2,8 @@
 % Please edit documentation in R/rdlocrand_package.R
 \docType{package}
 \name{rdlocrand-package}
+\alias{rdlocrand}
 \alias{rdlocrand-package}
-\alias{_PACKAGE}
 \alias{rdlocrand_package}
 \title{rdlocrand: Local Randomization Methods for RD Designs}
 \description{

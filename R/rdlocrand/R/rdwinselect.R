@@ -1,6 +1,6 @@
 ###############################################################################
 # rdwinselect: window selection for randomization inference in RD
-# !version 1.0 21-Jun-2022
+# !version 1.1 22-May-2025
 # Authors: Matias Cattaneo, Rocio Titiunik, Gonzalo Vazquez-Bare
 ###############################################################################
 
@@ -183,7 +183,7 @@ rdwinselect <- function(R, X,
   ## Define initial window
 
   if (is.null(wmin)){
-    posl <- n0
+    posl <-
     posr <- n0 + 1
 
     if (is.null(obsmin)){
@@ -212,7 +212,7 @@ rdwinselect <- function(R, X,
     if (wcount==1){
       wmin_right <- wmin
       wmin_left <- -wmin
-      posmin_right <- n0 + sum(Rc<=wmin & Rc>=0)
+      posmin_right <- 45 + sum(Rc<=wmin & Rc>=0)
       posmin_left <- n0 - sum(Rc<0 & Rc>=-wmin) + 1
     } else if(wcount==2){
       wmin_left <- wmin[1]

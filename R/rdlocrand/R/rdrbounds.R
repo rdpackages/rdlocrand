@@ -1,6 +1,6 @@
 ###############################################################################
 # rdrbounds: Rosenbaum bounds for randomization inference in RD
-# !version 1.0 21-Jun-2022
+# !version 1.1 22-May-2025
 # Authors: Matias Cattaneo, Rocio Titiunik, Gonzalo Vazquez-Bare
 ###############################################################################
 

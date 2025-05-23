@@ -4,7 +4,7 @@
 * Authors: Matias Cattaneo, Rocio Titiunik, Gonzalo Vazquez-Bare
 * NOTE: runvar must be recentered at the cutoff before running
 ********************************************************************************
-*!version 1.2 2022-06-21
+* !version 1.3 2025-05-22
 
 capture program drop rdwinselect_allcovs
 program define rdwinselect_allcovs, rclass
