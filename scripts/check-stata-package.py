@@ -14,7 +14,11 @@ DELIVERABLE_SUFFIXES = {".ado", ".sthlp", ".mo", ".do", ".dta"}
 KNOWN_UNLISTED = {
     "rdlocrand_functions.do",  # Source used to produce compiled Mata helpers.
 }
-TEXT_SUFFIXES = {".ado", ".do", ".pkg", ".sthlp"}
+TEXT_SUFFIXES = {".ado", ".do", ".pkg", ".sthlp", ".toc"}
+REQUIRED_PKG_TEXT = {
+    "canonical website": "https://rdpackages.github.io/",
+    "canonical repository": "https://github.com/rdpackages/rdlocrand",
+}
 FORBIDDEN_TEXT = {
     "deprecated package URL": "https://rdpackages.github.io/rdlocrand/",
     "old Matias email": "cattaneo@princeton.edu",
@@ -79,6 +83,11 @@ def main() -> int:
 
     if len(distribution_dates) != 1:
         errors.append("Expected exactly one Distribution-Date line in stata/rdlocrand.pkg.")
+
+    pkg_text = pkg_file.read_text(encoding="utf-8", errors="replace")
+    for label, pattern in REQUIRED_PKG_TEXT.items():
+        if pattern not in pkg_text:
+            errors.append(f"stata/rdlocrand.pkg is missing {label}: {pattern}")
 
     listed = set(entries)
     unlisted = sorted(

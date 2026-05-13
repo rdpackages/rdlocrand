@@ -214,3 +214,7 @@ maintainer explicitly approves a substantive change.
   `python scripts/check-stata-package.py --strict-unlisted`,
   `python scripts/check-stata-runtime.py`, and
   `python scripts/check-stata-numerical.py` all passed with StataNow 19.
+- Polished Stata package distribution metadata by adding canonical website and
+  repository lines to `stata/rdlocrand.pkg` and `stata/stata.toc`, extending the
+  static package checker to enforce those package-level URLs, and updating the
+  illustration do-file to use a temporary dataset for contour-plot replication.

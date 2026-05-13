@@ -1,2 +1,5 @@
 v 3
+d RDLOCRAND: Local Randomization Methods for RD Designs
+d Website: https://rdpackages.github.io/
+d Repository: https://github.com/rdpackages/rdlocrand
 p rdlocrand

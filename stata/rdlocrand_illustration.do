@@ -3,6 +3,8 @@
 ** Empirical Illustration
 ** Authors: Matias D. Cattaneo, Rocio Titiunik and Gonzalo Vazquez-Bare
 ** Last update: 2025-05-22
+** Website: https://rdpackages.github.io/
+** Repository: https://github.com/rdpackages/rdlocrand
 ********************************************************************************
 * net install rdlocrand, from(https://raw.githubusercontent.com/rdpackages/rdlocrand/master/stata) replace
 ********************************************************************************
@@ -11,7 +13,7 @@ use rdlocrand_senate.dta, clear
 global covariates presdemvoteshlag1 population demvoteshlag1 ///
                   demvoteshlag2 demwinprv1 demwinprv2 dopen dmidterm
 
-				  
+
 ********************************************************************************
 ** Summary Stats
 ********************************************************************************
@@ -45,7 +47,7 @@ rdwinselect demmv $covariates, wmin(.5) wstep(.125) reps(10000)
 quietly rdwinselect demmv $covariates, wmin(.5) wstep(.125) ///
                     nwin(80) approximate plot
 
-					
+
 ********************************************************************************
 ** rdrandinf
 ********************************************************************************
@@ -84,15 +86,16 @@ rdsensitivity demvoteshfor2 demmv, wlist(.75(.25)2) tlist(0(1)20) nodots ci(-.75
 
 ** Replicate contour plot
 
+tempfile graphdata
 rdsensitivity demvoteshfor2 demmv, wlist(.75(.25)10) tlist(0(1)20) nodots ///
-                                   saving(graphdata)
+                                   saving("`graphdata'")
 preserve
-use graphdata, clear
+use "`graphdata'", clear
 twoway contour pvalue t w, ccuts(0(0.05)1)
 restore
 
 preserve
-use graphdata, clear
+use "`graphdata'", clear
 twoway contour pvalue t w, ccuts(0(0.05)1) ccolors(gray*0.01 gray*0.05 ///
 	gray*0.1 gray*0.15 gray*0.2 gray*0.25 gray*0.3 gray*0.35 ///
 	gray*0.4 gray*0.5 gray*0.6 gray*0.7 gray*0.8 gray*0.9 gray ///
