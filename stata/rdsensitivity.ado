@@ -38,8 +38,9 @@ program define rdsensitivity, rclass sortpreserve
 		exit 125
 	}
 	
-	tempvar runvar
+	tempvar runvar treated
 	qui gen double `runvar' = `runv_aux' - `cutoff'
+	qui gen double `treated' = `runvar'>=0
 	
 	if "`statistic'"==""|"`statistic'"=="diffmeans"|"`statistic'"=="ttest"{
 		local statdisp "Diff. in means"
@@ -121,18 +122,21 @@ program define rdsensitivity, rclass sortpreserve
 	else{
 		numlist "`wlist'"
 		local nw: word count `r(numlist)'
+		local wlist_expanded "`r(numlist)'"
+		if "`wlist_left'"!=""{
+			numlist "`wlist_left'"
+			local wlist_left_expanded "`r(numlist)'"
+		}
 		mat wlist_mat = J(2,`nw',.)
 		forvalues w = 1/`nw'{
-			numlist "`wlist'"
-			tokenize `r(numlist)'
-			mat wlist_mat[2,`w'] = ``w'' - `cutoff'		
+			local w_right: word `w' of `wlist_expanded'
+			mat wlist_mat[2,`w'] = `w_right' - `cutoff'
 			if "`wlist_left'"==""{
 				mat wlist_mat[1,`w'] = -wlist_mat[2,`w']
 			}
 			else{
-				numlist "`wlist_left'"
-				tokenize `r(numlist)'
-				mat wlist_mat[1,`w'] = ``w'' - `cutoff'
+				local w_left: word `w' of `wlist_left_expanded'
+				mat wlist_mat[1,`w'] = `w_left' - `cutoff'
 			}
 		}
 	}
@@ -142,12 +146,9 @@ program define rdsensitivity, rclass sortpreserve
 ** Default tlist
 ********************************************************************************
 
-	if "`tlist'"==""{		
+	if "`tlist'"==""{
 		local wfirst = max(abs(wlist_mat[1,1]),wlist_mat[2,1])
 		qui {
-			tempvar treated
-			gen double `treated' = `runvar'>=0
-		
 			if "`fuzzy'"==""{
 				reg `outvar' `treated' if abs(`runvar')<=`wfirst'
 				local ci_r = round(_b[`treated']+1.96*_se[`treated'],.01)
@@ -164,7 +165,9 @@ program define rdsensitivity, rclass sortpreserve
 			local tlist `r(numlist)'
 		}
 	}
-	
+
+	numlist "`tlist'"
+	local tlist "`r(numlist)'"
 	local nt: word count `tlist'
 	
 
@@ -234,8 +237,8 @@ program define rdsensitivity, rclass sortpreserve
 		}
 		
 		local row = 1		
-		foreach t of numlist `tlist'{
-			mat tlist_vec[1,`row'] = `t' 
+		foreach t of local tlist{
+			mat tlist_vec[1,`row'] = `t'
 			qui rdrandinf `outvar' `runvar' if `touse', wl(`w_left') wr(`w_right') p(`p') reps(`reps') nulltau(`t') ///
 				`stat_opt' `eval_opt' `kernel_opt' `fuzzy_opt' seed(`seed')
 			mat Res[`row',`w'] = r(randpval)
@@ -259,7 +262,7 @@ program define rdsensitivity, rclass sortpreserve
 	di _newline as text "Randomization-based test complete."
 
 	local row = 1
-	foreach t of numlist `tlist'{
+	foreach t of local tlist{
 		mat Rows[`row',1]=`t'
 		local matrows " `matrows' `""`t'""'"
 		local ++row

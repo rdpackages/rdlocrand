@@ -193,6 +193,10 @@ maintainer explicitly approves a substantive change.
   `rdsensitivity` rank-sum and Kolmogorov-Smirnov paths, plus `rdrbounds`
   `bound(upper)`, `bound(lower)`, and `fmpval` branches before further Stata
   refactoring.
+- Cleaned `stata/rdsensitivity.ado` setup code without changing numerical
+  behavior: construct the treatment indicator once, expand `wlist`,
+  `wlist_left`, and `tlist` once, and reuse those expanded lists in later
+  loops.
 - Validation after the Stata help/static-check/runtime/numerical pass:
   `python scripts/check-stata-package.py --strict-unlisted`,
   `python scripts/check-stata-runtime.py`, and
