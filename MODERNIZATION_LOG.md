@@ -173,6 +173,14 @@ maintainer explicitly approves a substantive change.
   `scripts/check-stata-numerical.do` with fixed-seed numerical baselines for
   representative `rdwinselect`, `rdrandinf`, `rdsensitivity`, and `rdrbounds`
   outputs under StataNow 19.
+- Added `scripts/profile-stata-hotpaths.py` and
+  `scripts/profile-stata-hotpaths.do` for repeatable Stata timer profiling of
+  representative workloads, with results written to `tmp/stata-profiles/`.
+- Full StataNow 19 profiling before `.ado` refactoring identified
+  `rdrbounds_both` as the main target: about 31.75 seconds for the profiling
+  workload, versus about 1.12 seconds for `rdrandinf_diffmeans`, 0.98 seconds
+  for `rdsensitivity_grid`, 0.66 seconds for `rdrandinf_all`, and 0.49 seconds
+  for `rdwinselect_balance`.
 - Validation after the Stata help/static-check/runtime/numerical pass:
   `python scripts/check-stata-package.py --strict-unlisted`,
   `python scripts/check-stata-runtime.py`, and

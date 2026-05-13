@@ -66,6 +66,12 @@ against the current baseline:
 python scripts/check-stata-numerical.py
 ```
 
+For local Stata performance profiling:
+
+```sh
+python scripts/profile-stata-hotpaths.py --quick
+```
+
 For the optional local R replication baseline, which requires the external
 replication folders listed in `AGENTS.md`:
 

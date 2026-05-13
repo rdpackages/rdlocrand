@@ -73,6 +73,7 @@ python scripts/profile-python-hotpaths.py --quick
 python scripts/check-stata-package.py --strict-unlisted
 python scripts/check-stata-runtime.py
 python scripts/check-stata-numerical.py
+python scripts/profile-stata-hotpaths.py --quick
 ```
 
 For the R GitHub Actions equivalent:
@@ -132,6 +133,12 @@ On this workstation, StataNow 19 is installed at
 `C:\Program Files\StataNow19\StataMP-64.exe`; the runtime check auto-detects
 that path. Runtime and numerical checks also accept `--stata` or `STATA_EXE` if
 Stata is installed elsewhere.
+
+For local Stata profiling before and after performance refactors, run:
+
+```sh
+python scripts/profile-stata-hotpaths.py --quick
+```
 
 ## Editing Guidelines
 
