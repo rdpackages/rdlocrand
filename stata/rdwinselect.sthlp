@@ -54,11 +54,11 @@ for an introduction to this methodology.{p_end}
 
 {p 4 8}A detailed introduction to this command is given in
 {browse "https://rdpackages.github.io/references/Cattaneo-Titiunik-VazquezBare_2016_Stata.pdf":Cattaneo, Titiunik and Vazquez-Bare (2016)}.{p_end}
-{p 8 8}Companion {browse "www.r-project.org":R} functions are also available {browse "https://rdpackages.github.io/":here}.{p_end}
+{p 8 8}Companion R and Python packages are also available {browse "https://rdpackages.github.io/":here}.{p_end}
 
 {p 4 8}Companion functions are {help rdrandinf:rdrandinf}, {help rdsensitivity:rdsensitivity} and {help rdrbounds:rdrbounds}.{p_end}
 
-{p 4 8}Related Stata and R packages useful for inference in RD designs are described in the following website:{p_end}
+{p 4 8}Related R, Python, and Stata packages useful for inference in RD designs are described in the following website:{p_end}
 
 {p 8 8}{browse "https://rdpackages.github.io/":https://rdpackages.github.io/}{p_end}
 
@@ -179,7 +179,8 @@ This option is deprecated and only included for backward compatibility. We recom
 {synopt:{cmd:r(w_left)}} left end of recommended window{p_end}
 {synopt:{cmd:r(w_right)}} right end of recommended window{p_end}
 {synopt:{cmd:r(wobs)}} when specified, increment (in observations) in each window{p_end}
-{synopt:{cmd:r(wmin)}} initial window{p_end}
+{synopt:{cmd:r(wmin_left)}} left endpoint of initial window, when available{p_end}
+{synopt:{cmd:r(wmin_right)}} right endpoint of initial window, when available{p_end}
 {synopt:{cmd:r(wstep)}} when specified, increment (in window length) in each window{p_end}
 {synopt:{cmd:r(nwindows)}} total number of windows evaluated{p_end}
 
@@ -189,7 +190,8 @@ This option is deprecated and only included for backward compatibility. We recom
 
 {synoptset 20 tabbed}{...}
 {p2col 5 20 24 2: Matrices}{p_end}
-{synopt:{cmd:r(wlist)}} matrix with window lenghts{p_end}
+{synopt:{cmd:r(wlist_left)}} matrix with left endpoints of candidate windows{p_end}
+{synopt:{cmd:r(wlist_right)}} matrix with right endpoints of candidate windows{p_end}
 {synopt:{cmd:r(results)}} stores the minimum p-value from covariate balance test, p-value from binomial test, sample sizes and window length in each window{p_end}
 
 		

@@ -14,6 +14,26 @@ DELIVERABLE_SUFFIXES = {".ado", ".sthlp", ".mo", ".do", ".dta"}
 KNOWN_UNLISTED = {
     "rdlocrand_functions.do",  # Source used to produce compiled Mata helpers.
 }
+TEXT_SUFFIXES = {".ado", ".do", ".pkg", ".sthlp"}
+FORBIDDEN_TEXT = {
+    "deprecated package URL": "https://rdpackages.github.io/rdlocrand/",
+    "old Matias email": "cattaneo@princeton.edu",
+    "old Rocio email": "titiunik@princeton.edu",
+    "old Gonzalo email": "gvazquez@econ.ucsb.edu",
+    "old Ricardo email": "rmasini@ucdavis.edu",
+    "Ricardo author entry": "Ricardo",
+    "Masini author entry": "Masini",
+    "stale R-only companion wording": "Companion {browse \"www.r-project.org\":R} functions",
+    "stale related-package wording": "Related Stata and R packages",
+    "stale rdrandinf companion link": "{help rdrandinf:rdwinselect}",
+    "stale rdrbounds companion link 1": "{help rdsensitivity:rdwinselect}",
+    "stale rdrbounds companion link 2": "{help rdrbounds:rdsensitivity}",
+    "stale rdrbounds lower return": "r(lbounds)",
+    "stale rdrbounds upper return": "r(ubounds)",
+    "stale rdwinselect window-list return": "r(wlist)",
+    "stale scalar CI lower return": "r(ci_lb)",
+    "stale scalar CI upper return": "r(ci_ub)",
+}
 
 
 def find_repo_root(start: Path) -> Path:
@@ -75,6 +95,14 @@ def main() -> int:
             errors.append(message)
         else:
             warnings.append(message)
+
+    for path in sorted(stata_dir.iterdir()):
+        if not path.is_file() or path.suffix.lower() not in TEXT_SUFFIXES:
+            continue
+        text = path.read_text(encoding="utf-8", errors="replace")
+        for label, pattern in FORBIDDEN_TEXT.items():
+            if pattern in text:
+                errors.append(f"{path.name} contains {label}: {pattern}")
 
     print(f"Repository: {repo_root}")
     print(f"Package:    {pkg_file}")

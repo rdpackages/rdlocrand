@@ -50,7 +50,20 @@ python scripts/check-python.py --build --no-install
 For Stata package manifest checks:
 
 ```sh
-python scripts/check-stata-package.py
+python scripts/check-stata-package.py --strict-unlisted
+```
+
+For optional local Stata runtime smoke checks, which require Stata:
+
+```sh
+python scripts/check-stata-runtime.py
+```
+
+For local Stata numerical regression checks, which compare fixed-seed outputs
+against the current baseline:
+
+```sh
+python scripts/check-stata-numerical.py
 ```
 
 For the optional local R replication baseline, which requires the external

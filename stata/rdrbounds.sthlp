@@ -50,11 +50,11 @@ for an introduction to this methodology. See also Rosenbaum (2002) for a backgro
 
 {p 4 8}A detailed introduction to this command is given in
 {browse "https://rdpackages.github.io/references/Cattaneo-Titiunik-VazquezBare_2016_Stata.pdf":Cattaneo, Titiunik and Vazquez-Bare (2016)}.{p_end}
-{p 8 8}Companion {browse "www.r-project.org":R} functions are also available {browse "https://rdpackages.github.io/":here}.{p_end}
+{p 8 8}Companion R and Python packages are also available {browse "https://rdpackages.github.io/":here}.{p_end}
 
-{p 4 8}Companion functions are {help rdrandinf:rdrandinf}, {help rdsensitivity:rdwinselect} and {help rdrbounds:rdsensitivity}.{p_end}
+{p 4 8}Companion functions are {help rdrandinf:rdrandinf}, {help rdwinselect:rdwinselect} and {help rdsensitivity:rdsensitivity}.{p_end}
 
-{p 4 8}Related Stata and R packages useful for inference in RD designs are described in the following website:{p_end}
+{p 4 8}Related R, Python, and Stata packages useful for inference in RD designs are described in the following website:{p_end}
 
 {p 8 8}{browse "https://rdpackages.github.io/":https://rdpackages.github.io/}{p_end}
 
@@ -146,8 +146,8 @@ Default is {cmd:seed(666)}.{p_end}
 
 {synoptset 20 tabbed}{...}
 {p2col 5 20 24 2: Matrices}{p_end}
-{synopt:{cmd:r(lbounds)}} matrix of lower bounds{p_end}
-{synopt:{cmd:r(ubounds)}} matrix of upper bounds{p_end}
+{synopt:{cmd:r(lbound)}} matrix of lower bounds{p_end}
+{synopt:{cmd:r(ubound)}} matrix of upper bounds{p_end}
 {synopt:{cmd:r(pvals)}} matrix of p-values{p_end}
 		
 

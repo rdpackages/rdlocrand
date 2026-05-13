@@ -155,3 +155,25 @@ maintainer explicitly approves a substantive change.
   `.venv\Scripts\python.exe scripts/check-python.py --tests --no-install`, and
   `.venv\Scripts\python.exe scripts/profile-python-hotpaths.py --quick` all
   passed.
+
+### Stata
+
+- Corrected Stata help-file metadata and saved-results documentation without
+  changing `.ado` behavior: updated companion-package wording to include R,
+  Python, and Stata; fixed stale companion command links; and aligned documented
+  saved-result names with actual `return` values.
+- Strengthened `scripts/check-stata-package.py` to reject deprecated package
+  URLs, old author emails, Ricardo/Masini Stata author entries, stale companion
+  links, and stale saved-result names in distributed Stata text files.
+- Added `scripts/check-stata-runtime.py` and `scripts/check-stata-runtime.do`
+  to run local Stata smoke checks against the bundled Senate data. The checks
+  execute each public Stata command with fixed seeds and small replication
+  counts, then validate documented return objects and matrix dimensions.
+- Added `scripts/check-stata-numerical.py` and
+  `scripts/check-stata-numerical.do` with fixed-seed numerical baselines for
+  representative `rdwinselect`, `rdrandinf`, `rdsensitivity`, and `rdrbounds`
+  outputs under StataNow 19.
+- Validation after the Stata help/static-check/runtime/numerical pass:
+  `python scripts/check-stata-package.py --strict-unlisted`,
+  `python scripts/check-stata-runtime.py`, and
+  `python scripts/check-stata-numerical.py` all passed with StataNow 19.

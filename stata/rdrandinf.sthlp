@@ -68,11 +68,11 @@ for an introduction to this methodology.{p_end}
 
 {p 4 8}A detailed introduction to this command is given in
 {browse "https://rdpackages.github.io/references/Cattaneo-Titiunik-VazquezBare_2016_Stata.pdf":Cattaneo, Titiunik and Vazquez-Bare (2016)}.{p_end}
-{p 8 8}Companion {browse "www.r-project.org":R} functions are also available {browse "https://rdpackages.github.io/":here}.{p_end}
+{p 8 8}Companion R and Python packages are also available {browse "https://rdpackages.github.io/":here}.{p_end}
 
-{p 4 8}Companion functions are {help rdrandinf:rdwinselect}, {help rdsensitivity:rdsensitivity} and {help rdrbounds:rdrbounds}.{p_end}
+{p 4 8}Companion functions are {help rdwinselect:rdwinselect}, {help rdsensitivity:rdsensitivity} and {help rdrbounds:rdrbounds}.{p_end}
 
-{p 4 8}Related Stata and R packages useful for inference in RD designs are described in the following website:{p_end}
+{p 4 8}Related R, Python, and Stata packages useful for inference in RD designs are described in the following website:{p_end}
 
 {p 8 8}{browse "https://rdpackages.github.io/":https://rdpackages.github.io/}{p_end}
 
@@ -238,8 +238,8 @@ This option is deprecated and only included for backward compatibility.{p_end}
 {synopt:{cmd:r(obs_stat)}} observed statistic{p_end}
 {synopt:{cmd:r(randpval)}} randomization p-value{p_end}
 {synopt:{cmd:r(asy_pval)}} asymptotic p-value{p_end}
-{synopt:{cmd:r(ci_lb)}} lower limit of confidence interval (if {cmd:ci} option is specified) {p_end}
-{synopt:{cmd:r(ci_ub)}} upper limit of confidence interval (if {cmd:ci} option is specified) {p_end}
+{synopt:{cmd:r(int_lb)}} lower limit of confidence interval under interference (if {cmd:interfci} option is specified) {p_end}
+{synopt:{cmd:r(int_ub)}} upper limit of confidence interval under interference (if {cmd:interfci} option is specified) {p_end}
 
 {synoptset 20 tabbed}{...}
 {p2col 5 20 24 2: Locals}{p_end}
@@ -250,6 +250,7 @@ This option is deprecated and only included for backward compatibility.{p_end}
 {synopt:{cmd:r(obs_stat)}} matrix of observed statistics (when {cmd:all} is specified){p_end}
 {synopt:{cmd:r(asy_pval)}} matrix of asymptotic p-values (when {cmd:all} is specified){p_end}
 {synopt:{cmd:r(p_val)}} matrix of p-values (when {cmd:all} is specified){p_end}
+{synopt:{cmd:r(CI)}} confidence interval matrix (if {cmd:ci} option is specified){p_end}
 		
 
 {marker references}{...}

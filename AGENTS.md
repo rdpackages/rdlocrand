@@ -70,7 +70,9 @@ python scripts/check-python.py --syntax-only
 python scripts/check-python.py --tests --no-install
 python scripts/check-python.py --build --no-install
 python scripts/profile-python-hotpaths.py --quick
-python scripts/check-stata-package.py
+python scripts/check-stata-package.py --strict-unlisted
+python scripts/check-stata-runtime.py
+python scripts/check-stata-numerical.py
 ```
 
 For the R GitHub Actions equivalent:
@@ -115,11 +117,21 @@ When adding, renaming, or removing distributed Stata files, update
 `stata/rdlocrand.pkg` and run:
 
 ```sh
-python scripts/check-stata-package.py
+python scripts/check-stata-package.py --strict-unlisted
 ```
 
 Do not assume Stata is available in CI. Repository checks validate the package
-manifest; run functional Stata checks locally when changing `.ado` behavior.
+manifest; run functional Stata checks locally when changing `.ado` behavior:
+
+```sh
+python scripts/check-stata-runtime.py
+python scripts/check-stata-numerical.py
+```
+
+On this workstation, StataNow 19 is installed at
+`C:\Program Files\StataNow19\StataMP-64.exe`; the runtime check auto-detects
+that path. Runtime and numerical checks also accept `--stata` or `STATA_EXE` if
+Stata is installed elsewhere.
 
 ## Editing Guidelines
 
