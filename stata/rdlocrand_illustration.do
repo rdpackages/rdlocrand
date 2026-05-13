@@ -2,7 +2,7 @@
 ** RDLOCRAND Stata Package 
 ** Empirical Illustration
 ** Authors: Matias D. Cattaneo, Rocio Titiunik and Gonzalo Vazquez-Bare
-** Last update: 2025-05-22
+** Last update: 2026-05-13
 ** Website: https://rdpackages.github.io/
 ** Repository: https://github.com/rdpackages/rdlocrand
 ********************************************************************************

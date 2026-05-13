@@ -1,5 +1,5 @@
 {smcl}
-{* *! version 1.3 22May2025}{...}
+{* *! version 2.0 13May2026}{...}
 {viewerjumpto "Syntax" "rdsensitivity##syntax"}{...}
 {viewerjumpto "Description" "rdsensitivity##description"}{...}
 {viewerjumpto "Options" "rdsensitivity##options"}{...}

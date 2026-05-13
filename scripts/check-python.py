@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import ast
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -30,6 +31,23 @@ def check_syntax(src_dir: Path) -> bool:
             print(f"{path}: {exc}", file=sys.stderr)
             ok = False
     return ok
+
+
+def clean_build_artifacts(pkg_dir: Path) -> None:
+    pkg_root = pkg_dir.resolve()
+    for path in (
+        pkg_dir / "build",
+        pkg_dir / "dist",
+        pkg_dir / "src" / "rdlocrand.egg-info",
+    ):
+        resolved = path.resolve()
+        try:
+            resolved.relative_to(pkg_root)
+        except ValueError as exc:
+            raise RuntimeError(f"Refusing to remove path outside package: {resolved}") from exc
+        if resolved.exists():
+            print(f"Removing generated artifact directory: {resolved}")
+            shutil.rmtree(resolved)
 
 
 def main() -> int:
@@ -70,6 +88,7 @@ def main() -> int:
         run([sys.executable, "-m", "unittest", "discover", "-s", str(pkg_dir / "tests")], cwd=repo_root)
 
     if args.build:
+        clean_build_artifacts(pkg_dir)
         run([sys.executable, "-m", "build", str(pkg_dir)], cwd=repo_root)
 
     return 0

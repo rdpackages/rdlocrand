@@ -224,3 +224,7 @@ maintainer explicitly approves a substantive change.
   repository metadata workflow; stricter Stata CI; Python CI build coverage;
   `twine check` validation for built Python distributions; and Python
   3.13/3.14 classifiers and CI entries.
+- Bumped R, Python, and Stata package versions to 2.0 for the modernization
+  release and updated Stata package/update dates to 2026-05-13. Updated the
+  Python build helper to clear stale generated build artifacts before creating
+  source and wheel distributions.

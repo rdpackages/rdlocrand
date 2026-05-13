@@ -1,7 +1,7 @@
 Package: rdlocrand
 Type: Package
 Title: Local Randomization Methods for RD Designs
-Version: 1.1
+Version: 2.0
 Authors@R: c(person(given = c("Matias", "D."),
                       family = "Cattaneo",
                       role = c("aut", "cre"),

@@ -2,7 +2,7 @@
 * RDRBOUNDS: Rosenbum bounds for randomization inference in RDD
 * Authors: Matias Cattaneo, Rocio Titiunik, Gonzalo Vazquez-Bare
 ********************************************************************************
-* !version 1.3 2025-05-22
+* !version 2.0 2026-05-13
 
 version 13
 

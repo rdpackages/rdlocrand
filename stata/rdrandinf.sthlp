@@ -1,5 +1,5 @@
 {smcl}
-{* *! version 1.3 22May2025}{...}
+{* *! version 2.0 13May2026}{...}
 {viewerjumpto "Syntax" "rdrandinf##syntax"}{...}
 {viewerjumpto "Description" "rdrandinf##description"}{...}
 {viewerjumpto "Options" "rdrandinf##options"}{...}
