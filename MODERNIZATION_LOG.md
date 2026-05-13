@@ -205,6 +205,11 @@ maintainer explicitly approves a substantive change.
   Full StataNow 19 profiling identified fixed-margins `diffmeans` as the
   main remaining `rdrandinf` outlier at about 1.25 seconds for 200
   replications.
+- Updated `stata/rdrandinf.ado` to skip writing the fixed-margins permutation
+  dataset unless `interfci()` is requested. This preserves Stata's `permute`
+  engine and fixed-seed p-values while avoiding unnecessary temporary-file
+  writes in the common path; the focused `fixed_diffmeans` profile moved from
+  about 1.25 seconds to about 1.15 seconds.
 - Validation after the Stata help/static-check/runtime/numerical pass:
   `python scripts/check-stata-package.py --strict-unlisted`,
   `python scripts/check-stata-runtime.py`, and

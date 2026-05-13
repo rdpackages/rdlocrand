@@ -614,7 +614,11 @@ program define rdrandinf, rclass sortpreserve
 
 		if "`bernoulli'"==""{
 			local assimech "fixed margins"
-			qui permute `tr' `stat_list', reps(`reps') nodots nowarn saving(`permbase'): ///
+			local saving_opt ""
+			if `interfci'>0{
+				local saving_opt "saving(`permbase')"
+			}
+			qui permute `tr' `stat_list', reps(`reps') nodots nowarn `saving_opt': ///
 					rdrandinf_model `Y_adj_null' `tr', stat(`stat_permute') `kwrd_opt' `fuzzy_cond'
 			
 			di as text "Randomization-based test complete."
