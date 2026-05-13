@@ -7,8 +7,9 @@ import statsmodels.api as sm
 from scipy.special import comb
 from linearmodels import IV2SLS
 from rdlocrand.rdwinselect import rdwinselect
-from rdlocrand.rdlocrand_fun import rdrandinf_model, find_CI
+from rdlocrand.rdlocrand_fun import rdrandinf_model, find_CI, rdlocrand_preserve_rng
 
+@rdlocrand_preserve_rng
 def rdrandinf(Y, R, cutoff=0, wl=None, wr=None, statistic='diffmeans', p=0, evall=None, evalr=None, kernel='uniform',
               fuzzy=None, nulltau=0, d=None, dscale=None, ci=None, interfci=None, bernoulli=None, reps=1000, seed=666,
               quietly=False, covariates=None, obsmin=None, wmin=None, wobs=None, wstep=None, wasymmetric=False,
@@ -21,6 +22,18 @@ def rdrandinf(Y, R, cutoff=0, wl=None, wr=None, statistic='diffmeans', p=0, eval
     rdrandinf implements randomization inference and related methods for RD designs,
     using observations in a specified or data-driven selected window around the cutoff where
     local randomization is assumed to hold.
+
+    Authors:
+    Matias D. Cattaneo, Princeton University. Email: matias.d.cattaneo@gmail.com
+    Ricardo Masini, UC Davis. Email: ricardo.masini@gmail.com
+    Rocio Titiunik, Princeton University. Email: rocio.titiunik@gmail.com
+    Gonzalo Vazquez-Bare, UC Santa Barbara. Email: gvazquezbare@gmail.com
+
+    References:
+    Cattaneo, M.D., R. Titiunik, and G. Vazquez-Bare. (2016).
+    Inference in Regression Discontinuity Designs under Local Randomization.
+    Stata Journal 16(2): 331-367.
+    URL: https://rdpackages.github.io/references/Cattaneo-Titiunik-VazquezBare_2016_Stata.pdf
 
     Parameters:
     -----------
@@ -36,7 +49,7 @@ def rdrandinf(Y, R, cutoff=0, wl=None, wr=None, statistic='diffmeans', p=0, eval
         The right limit of the window. The default takes the maximum of the running variable.
     statistic : str, optional
         The statistic to be used in the balance tests. Allowed options are 'diffmeans' (difference in means statistic),
-        'ksmirnov' (Kolmogorov-Smirnov statistic), and 'ranksum' (Wilcoxon-Mann-Whitney standardized statistic).
+        'ksmirnov' (Kolmogorov-Smirnov statistic), 'ranksum' (Wilcoxon-Mann-Whitney standardized statistic), and 'all'.
         Default option is 'diffmeans'. The statistic 'ttest' is equivalent to 'diffmeans' and included for backward compatibility.
     p : int, optional
         The order of the polynomial for the outcome transformation model (default is 0).
@@ -121,38 +134,43 @@ def rdrandinf(Y, R, cutoff=0, wl=None, wr=None, statistic='diffmeans', p=0, eval
     
     Returns
     -------
-    sumstats : DataFrame
-        Summary statistics.
-    obs_stat : float or array-like
-        Observed statistic(s).
-    p_value : float or array-like
-        Randomization p-value(s).
-    asy_pvalue : float or array-like
-        Asymptotic p-value(s).
-    window : tuple
-        Chosen window.
-    ci : DataFrame, optional
-        Confidence interval (only if ci option is specified).
-    interf_ci : DataFrame, optional
-        Confidence interval under interference (only if interfci is specified).
+    dict
+        Dictionary containing:
+
+        - ``sumstats``: full-sample and window-specific summary statistics.
+        - ``obs.stat``: observed statistic or statistics.
+        - ``p.value``: randomization p-value or p-values.
+        - ``asy.pvalue``: asymptotic p-value or p-values.
+        - ``window``: chosen window endpoints.
+        - ``ci``: confidence interval; included only when ``ci`` is specified.
+        - ``interf.ci``: confidence interval under interference; included only
+          when ``interfci`` is specified.
 
     Example
     ------- 
 
-    X = array(rnorm(200),dim=c(100,2))
-    R = X[1,] + X[2,] + rnorm(100)
-    Y = 1 + R -.5*R^2 + .3*R^3 + (R>=0) + rnorm(100)
+    import numpy as np
+
+    np.random.seed(123)
+    X = np.random.normal(size=(100, 2))
+    R = X[:, 0] + X[:, 1] + np.random.normal(size=100)
+    Y = 1 + R - 0.5 * R**2 + 0.3 * R**3 + (R >= 0) + np.random.normal(size=100)
 
     # Randomization inference in window (-.75,.75)
-    tmp = rdrandinf(Y, R, wl=-.75, wr=.75)
+    tmp = rdrandinf(Y, R, wl=-0.75, wr=0.75, quietly=True)
 
     # Randomization inference in window (-.75,.75), all statistics
-    tmp = rdrandinf(Y, R, wl=-.75, wr=.75, statistic='all')
+    tmp = rdrandinf(Y, R, wl=-0.75, wr=0.75, statistic='all', quietly=True)
 
     # Randomization inference with window selection
     # Note: low number of replications to speed up the process.
     # The user should increase the number of replications.
-    tmp = rdrandinf(Y, R, statistic='all', covariates=X, wmin=.5, wstep=.125, rdwreps=500)
+    tmp = rdrandinf(
+        Y, R,
+        statistic='all', covariates=X,
+        wmin=0.5, wstep=0.125, rdwreps=500,
+        level=0, quietly=True,
+    )
     """
 
     randmech = 'fixed margins'
@@ -267,11 +285,6 @@ def rdrandinf(Y, R, cutoff=0, wl=None, wr=None, statistic='diffmeans', p=0, eval
     n1 = np.sum(D)
     n0 = n - n1
 
-    if seed > 0:
-        np.random.seed(seed)
-    elif seed != -1:
-        raise ValueError('Seed has to be a positive integer or -1 for system seed')
-    
     ###############################################################################
     # Window selection
     ###############################################################################
@@ -480,8 +493,8 @@ def rdrandinf(Y, R, cutoff=0, wl=None, wr=None, statistic='diffmeans', p=0, eval
                 if (np.mean(D_sample) == 1) or (np.mean(D_sample) == 0):
                     stats_distr[i] = np.nan # ignore cases where bernoulli assignment mechanism gives no treated or no controls
                 else:
-                    obs_stat_sample = float(rdrandinf_model(Y_adj_null, D_sample, statistic, kweights=kweights, delta=delta)['statistic'])
-                    stats_distr[i] = obs_stat_sample
+                    obs_stat_sample = rdrandinf_model(Y_adj_null, D_sample, statistic, kweights=kweights, delta=delta)['statistic']
+                    stats_distr[i, :] = obs_stat_sample
 
         if not quietly:
             print('Randomization-based test complete.')
@@ -648,6 +661,7 @@ def rdrandinf(Y, R, cutoff=0, wl=None, wr=None, statistic='diffmeans', p=0, eval
 
 
 
+@rdlocrand_preserve_rng
 def rdsensitivity_inner(Y, R, cutoff=0, wlist=None, wlist_left=None,
                    tlist=None, statistic='diffmeans', p=0,
                     evalat='cutoff', kernel='uniform', fuzzy=None,
@@ -678,11 +692,6 @@ def rdsensitivity_inner(Y, R, cutoff=0, wlist=None, wlist_left=None,
     if ci is not None and len(ci) != 2:
         raise ValueError('Need to specify wleft and wright in CI option')
 
-    if seed > 0:
-        np.random.seed(seed)
-    elif seed != -1:
-        raise ValueError('Seed has to be a positive integer or -1 for system seed')
-
     data = np.column_stack((Y, R))
     data = data[~np.isnan(data).any(axis=1)]
     Y = data[:, 0]
@@ -696,8 +705,11 @@ def rdsensitivity_inner(Y, R, cutoff=0, wlist=None, wlist_left=None,
 
     if wlist is None:
         aux = rdwinselect(Rc, wobs=5, quietly=True)
-        wlist = aux['results'][:, 6]
-        wlist_left = aux['results'][:, 5]
+        results = aux['results'].to_numpy()
+        wlist = results[:, 6]
+        wlist_left = results[:, 5]
+        wlist_orig = wlist + cutoff
+        wlist_left_orig = wlist_left + cutoff
     else:
         wlist_orig = wlist
         wlist = wlist - cutoff

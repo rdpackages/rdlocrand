@@ -2,8 +2,87 @@
 # -*- coding: utf-8 -*-
 
 import numpy as np
-from scipy.stats import norm, ks_2samp, ranksums, f
+from functools import wraps
+from inspect import signature
+from scipy.stats import norm, ks_2samp, rankdata, f
 import statsmodels.api as sm
+
+_rng_depth = 0
+_rng_state = None
+
+
+def rdlocrand_seed_scope(seed):
+    global _rng_depth, _rng_state
+
+    try:
+        valid_seed = (seed > 0) or (seed == -1)
+    except TypeError as exc:
+        raise ValueError('Seed has to be a positive integer or -1 for system seed') from exc
+    if not valid_seed:
+        raise ValueError('Seed has to be a positive integer or -1 for system seed')
+
+    outermost = _rng_depth == 0
+    if outermost:
+        _rng_state = np.random.get_state()
+    _rng_depth += 1
+
+    if seed > 0:
+        np.random.seed(seed)
+
+    restored = False
+
+    def restore():
+        nonlocal restored
+        global _rng_depth, _rng_state
+        if restored:
+            return
+        restored = True
+        _rng_depth = max(0, _rng_depth - 1)
+        if outermost and _rng_state is not None:
+            np.random.set_state(_rng_state)
+            _rng_state = None
+
+    return restore
+
+
+def rdlocrand_preserve_rng(func):
+    func_signature = signature(func)
+    default_seed = func_signature.parameters['seed'].default
+
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        bound = func_signature.bind_partial(*args, **kwargs)
+        seed = bound.arguments.get('seed', default_seed)
+        restore_rng = rdlocrand_seed_scope(seed)
+        try:
+            return func(*args, **kwargs)
+        finally:
+            restore_rng()
+
+    return wrapper
+
+
+def ksmirnov_statistic(x, y):
+    x = np.asarray(x)
+    y = np.asarray(y)
+    values = np.sort(np.unique(np.concatenate((x, y))))
+    cdf_x = np.searchsorted(np.sort(x), values, side='right') / len(x)
+    cdf_y = np.searchsorted(np.sort(y), values, side='right') / len(y)
+    return np.max(np.abs(cdf_x - cdf_y))
+
+
+def ranksum_statistic(x, y):
+    x = np.asarray(x)
+    y = np.asarray(y)
+    n0 = len(x)
+    n1 = len(y)
+    n = n0 + n1
+    ranks = rankdata(np.concatenate((x, y)))
+    t_stat = np.sum(ranks[:n0])
+    expected = n0 * (n + 1) / 2
+    variance = n0 * n1 * (n + 1) / 12
+    return (t_stat - expected) / np.sqrt(variance)
+
 
 #################################################################
 # rdrandinf observed statistics and asymptotic p-values
@@ -44,7 +123,7 @@ def rdrandinf_model(Y, D, statistic, pvalue=False, kweights=None, endogtr=None, 
                 lm_aux = sm.WLS(Y[:, k], sm.add_constant(D), weights=kweights).fit()
                 stat[k] = lm_aux.params[1]
                 if pvalue:
-                    se = np.sqrt(lm_aux.cov_params().loc[1, 1])
+                    se = np.sqrt(lm_aux.cov_HC2[1, 1])
                     t_stat = stat[k] / se
                     asy_pval[k] = 2 * norm.cdf(-np.abs(t_stat))
                     if delta is not None:
@@ -56,18 +135,19 @@ def rdrandinf_model(Y, D, statistic, pvalue=False, kweights=None, endogtr=None, 
         stat = np.zeros(Y.shape[1])
         asy_pval = np.zeros(Y.shape[1])
         for k in range(Y.shape[1]):
-            aux_ks = ks_2samp(Y[D == 0, k], Y[D == 1, k])
-            stat[k] = aux_ks.statistic
             if pvalue:
+                aux_ks = ks_2samp(Y[D == 0, k], Y[D == 1, k])
+                stat[k] = aux_ks.statistic
                 asy_pval[k] = aux_ks.pvalue
                 asy_power = np.nan
+            else:
+                stat[k] = ksmirnov_statistic(Y[D == 0, k], Y[D == 1, k])
 
     elif statistic == 'ranksum':
         stat = np.zeros(Y.shape[1])
         asy_pval = np.zeros(Y.shape[1])
         for k in range(Y.shape[1]):
-            T_stat, _ = ranksums(Y[D == 0, k], Y[D == 1, k])
-            stat[k] = T_stat
+            stat[k] = ranksum_statistic(Y[D == 0, k], Y[D == 1, k])
         if pvalue:
             asy_pval = 2 * norm.cdf(-np.abs(stat))
             sigma = np.std(Y, axis=0, ddof = 1)
@@ -78,10 +158,12 @@ def rdrandinf_model(Y, D, statistic, pvalue=False, kweights=None, endogtr=None, 
 
     elif statistic == 'all':
         stat1 = np.mean(Y[D == 1,0]) - np.mean(Y[D == 0,0])
-        aux_ks = ks_2samp(Y[D == 0,0], Y[D == 1,0])
-        stat2 = aux_ks.statistic
-        aux_rs = ranksums(Y[D == 0,0], Y[D == 1,0])
-        stat3 = aux_rs.statistic
+        if pvalue:
+            aux_ks = ks_2samp(Y[D == 0,0], Y[D == 1,0])
+            stat2 = aux_ks.statistic
+        else:
+            stat2 = ksmirnov_statistic(Y[D == 0,0], Y[D == 1,0])
+        stat3 = ranksum_statistic(Y[D == 0,0], Y[D == 1,0])
         stat = np.array([stat1, stat2, stat3])
         if pvalue:
             Y1 = Y[D == 1,0]
@@ -135,6 +217,32 @@ def rdrandinf_model(Y, D, statistic, pvalue=False, kweights=None, endogtr=None, 
         output = {'statistic': stat}
 
     return output
+
+
+@rdlocrand_preserve_rng
+def rdrandinf_bernoulli_ranksum_pvalue(Y, R, prob, reps, nulltau=0, seed=666):
+    D = np.asarray(R) >= 0
+    Y_adj_null = np.asarray(Y) - nulltau * D
+    ranks = rankdata(Y_adj_null)
+    n = len(D)
+
+    def statistic_from_assignment(D_sample):
+        n1 = np.sum(D_sample)
+        n0 = n - n1
+        t_stat = np.sum(ranks[D_sample == 0])
+        expected = n0 * (n + 1) / 2
+        variance = n0 * n1 * (n + 1) / 12
+        return (t_stat - expected) / np.sqrt(variance)
+
+    obs_stat = statistic_from_assignment(D)
+    stats_distr = np.full(reps, np.nan)
+
+    for i in range(reps):
+        D_sample = np.random.uniform(0, 1, n) <= prob
+        if (np.mean(D_sample) != 1) and (np.mean(D_sample) != 0):
+            stats_distr[i] = statistic_from_assignment(D_sample)
+
+    return np.nanmean(np.abs(stats_distr) >= np.abs(obs_stat))
 
 #################################################################
 # Hotelling's T2 statistic

@@ -6,9 +6,12 @@ import numpy as np
 import warnings
 from scipy.stats import norm, binomtest
 import statsmodels.api as sm
-import matplotlib.pyplot as plt
-from rdlocrand.rdlocrand_fun import findwobs, findwobs_sym, findstep, hotelT2, rdrandinf_model
+from rdlocrand.rdlocrand_fun import (
+    findwobs, findwobs_sym, findstep, hotelT2, rdrandinf_model,
+    rdlocrand_preserve_rng,
+)
 
+@rdlocrand_preserve_rng
 def rdwinselect(R, X=None, cutoff=0, obsmin=None, wmin=None, wobs=None, wstep=None,
                 wasymmetric=False, wmasspoints=False, dropmissing=False, nwindows=10,
                 statistic='diffmeans', p=0, evalat='cutoff', kernel='uniform',
@@ -25,6 +28,18 @@ def rdwinselect(R, X=None, cutoff=0, obsmin=None, wmin=None, wobs=None, wstep=No
     around the cutoff such that the minimum p-value of the balance test is larger than a
     prespecified level for all nested (smaller) windows. By default, the p-values are calculated
     using randomization inference methods.
+
+    Authors:
+    Matias D. Cattaneo, Princeton University. Email: matias.d.cattaneo@gmail.com
+    Ricardo Masini, UC Davis. Email: ricardo.masini@gmail.com
+    Rocio Titiunik, Princeton University. Email: rocio.titiunik@gmail.com
+    Gonzalo Vazquez-Bare, UC Santa Barbara. Email: gvazquezbare@gmail.com
+
+    References:
+    Cattaneo, M.D., R. Titiunik, and G. Vazquez-Bare. (2016).
+    Inference in Regression Discontinuity Designs under Local Randomization.
+    Stata Journal 16(2): 331-367.
+    URL: https://rdpackages.github.io/references/Cattaneo-Titiunik-VazquezBare_2016_Stata.pdf
 
     Parameters:
     ----------
@@ -90,32 +105,36 @@ def rdwinselect(R, X=None, cutoff=0, obsmin=None, wmin=None, wobs=None, wstep=No
 
     Returns:
     -------
-    window : float or None
-        Recommended window (None if covariates are not specified).
-    wlist : list
-        List of window lengths.
-    results : DataFrame
-        Table including window lengths, minimum p-value in each window, corresponding number of
-        the variable with the minimum p-value (i.e., column of covariate matrix), Binomial test
-        p-value, and sample sizes to the left and right of the cutoff in each window.
-    summary : dict
-        Summary statistics.
+    dict
+        Dictionary containing:
+
+        - ``w_left``: left endpoint of the recommended window.
+        - ``w_right``: right endpoint of the recommended window.
+        - ``wlist_left``: left endpoints of the candidate windows.
+        - ``wlist_right``: right endpoints of the candidate windows.
+        - ``results``: table containing the minimum covariate-balance p-value,
+          selected covariate index, binomial-test p-value, sample sizes below
+          and above the cutoff, and window endpoints for each candidate window.
+        - ``summary``: sample-size summaries by side of the cutoff.
 
     Examples:
     ---------
+    import numpy as np
+
+    np.random.seed(123)
     X = np.random.randn(100, 2)
-    R = X[0] + X[1] + np.random.randn(100)
+    R = X[:, 0] + X[:, 1] + np.random.randn(100)
 
     # Window selection adding 5 observations at each step
     # Note: low number of replications to speed up process.
-    tmp = rdwinselect(R, X, obsmin=10, wobs=5, reps=500)
+    tmp = rdwinselect(R, X, obsmin=10, wobs=5, reps=500, quietly=True)
 
     # Window selection setting initial window and step
     # The user should increase the number of replications.
-    tmp = rdwinselect(R, X, wmin=0.5, wstep=0.125, reps=500)
+    tmp = rdwinselect(R, X, wmin=0.5, wstep=0.125, reps=500, quietly=True)
 
     # Window selection with approximate (large sample) inference and p-value plot
-    tmp = rdwinselect(R, X, wmin=0.5, wstep=0.125, approx=True, nwin=80, quietly=True, plot=True)
+    tmp = rdwinselect(R, X, wmin=0.5, wstep=0.125, approx=True, nwindows=80, quietly=True, plot=True)
     """
     
     ###############################################################################
@@ -166,6 +185,7 @@ def rdwinselect(R, X=None, cutoff=0, obsmin=None, wmin=None, wobs=None, wstep=No
         else: data = data.dropna()
         data = data.sort_values('Rc')
         X = data.drop(['Rc', 'D'],axis=1).values
+        covariate_complete = ~np.isnan(X).any(axis=1)
     else:
         colnames_X = None
         data = pd.concat([Rc, D], axis = 1)
@@ -174,11 +194,6 @@ def rdwinselect(R, X=None, cutoff=0, obsmin=None, wmin=None, wobs=None, wstep=No
     
     Rc = data['Rc'].values
     D = data['D'].values
-    
-    if seed > 0:
-        np.random.seed(seed)
-    elif seed != -1:
-        raise ValueError('Seed has to be a positive integer or -1 for system seed')
     
     testing_method = 'rdrandinf' if not approx else 'approximate'
     
@@ -359,23 +374,14 @@ def rdwinselect(R, X=None, cutoff=0, obsmin=None, wmin=None, wobs=None, wstep=No
 
             ww = (Rc >= wlower) & (Rc <= wupper)
 
-        Dw = D[ww]
-        Rw = Rc[ww]
-
-        # Drop NA values
-
         if X is not None:
+            ww = ww & covariate_complete
+            Dw = D[ww]
+            Rw = Rc[ww]
             Xw = X[ww, :]
-            data = np.column_stack((Rw, Dw, Xw))
-            data = data[~np.isnan(data).any(axis=1)]
-            Rw = data[:, 0]
-            Dw = data[:, 1]
-            Xw = data[:, 2:]
         else:
-            data = np.column_stack((Rw, Dw))
-            data = data[~np.isnan(data).any(axis=1)]
-            Rw = data[:, 0]
-            Dw = data[:, 1]
+            Dw = D[ww]
+            Rw = Rc[ww]
 
         # Sample sizes
 
@@ -441,8 +447,8 @@ def rdwinselect(R, X=None, cutoff=0, obsmin=None, wmin=None, wobs=None, wstep=No
                     if not approx:
                         stat_distr = np.empty(reps)
                         for i in range(reps):
-                            D_sample = np.random.choice(Dw, replace=False)
-                            obs_stat_sample = hotelT2(Xw, D_sample).statistic
+                            D_sample = np.random.choice(Dw, size=len(Dw), replace=False)
+                            obs_stat_sample = hotelT2(Xw, D_sample)['statistic']
                             stat_distr[i] = obs_stat_sample
                         p_value = np.mean(np.abs(stat_distr) >= np.abs(obs_stat))
                     else:
@@ -466,7 +472,7 @@ def rdwinselect(R, X=None, cutoff=0, obsmin=None, wmin=None, wobs=None, wstep=No
                             p_value = np.zeros(X.shape[1])
                             for k in range(X.shape[1]):
                                 lfit = sm.WLS(Xw[:, k], sm.add_constant(np.column_stack((Dw, Rpoly, Dw * Rpoly))), weights=kweights).fit()
-                                tstat = lfit.params[1] / np.sqrt(lfit.cov_HC2.loc[1, 1])
+                                tstat = lfit.params[1] / np.sqrt(lfit.cov_HC2[1, 1])
                                 p_value[k] = 2 * norm.cdf(-np.abs(tstat))
 
                     table_rdw[j, 0] = np.min(p_value)
@@ -530,6 +536,8 @@ def rdwinselect(R, X=None, cutoff=0, obsmin=None, wmin=None, wobs=None, wstep=No
 
     if plot:
         if 'X' in locals():
+            import matplotlib.pyplot as plt
+
             rdwinselect_plot = plt.figure().gca()
             rdwinselect_plot.set_xlabel('Windows Right')
             rdwinselect_plot.set_ylabel('p-values')

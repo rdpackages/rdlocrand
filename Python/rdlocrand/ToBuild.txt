@@ -1,24 +1,37 @@
-# change the version number in the config file (.cfg)
-# version = X.X.X
-# NEEDED: pip install build
+# Python package build and release checklist
 
-# To build the package, type (where the .toml file is located)
-python3 -m build
+Run commands from the repository root unless noted otherwise.
 
-# To install a local package
-python3 -m pip install ./dist/rdlocrand-X.X.X.tar.gz
+1. Update the version in `Python/rdlocrand/setup.cfg`.
 
-# To upload to PyPI (Test Version)
-python3 -m twine upload --repository testpypi dist/*
+2. Install build/release tools in the active environment:
 
-# To upload to PyPI (Official Version)
-twine upload dist/*
+   python -m pip install --upgrade build twine
 
-# To install (Test Version)
-pip install -i https://test.pypi.org/simple/ rdlocrand==0.0.XX
+3. Run local package checks:
 
-# To install (Official Version)
-pip install rdlocrand
+   python scripts/check-python.py --tests --no-install
+   python scripts/profile-python-hotpaths.py --quick
 
-# To uninstall
-pip uninstall rdlocrand
+4. Build source and wheel distributions:
+
+   python scripts/check-python.py --build --no-install
+
+5. Verify the built distributions:
+
+   python -m twine check Python/rdlocrand/dist/*
+
+6. Upload to TestPyPI:
+
+   python -m twine upload --repository testpypi Python/rdlocrand/dist/*
+
+7. Install from TestPyPI for a smoke check:
+
+   python -m pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple rdlocrand==X.Y.Z
+
+8. Upload to PyPI:
+
+   python -m twine upload Python/rdlocrand/dist/*
+
+Do not commit `Python/rdlocrand/dist/`, build directories, or egg-info
+metadata. They are generated release artifacts.

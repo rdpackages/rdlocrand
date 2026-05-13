@@ -45,5 +45,5 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install -e Python/rdlocrand
 
-      - name: Run Python smoke check
-        run: python scripts/check-python.py --smoke --no-install
+      - name: Run Python tests
+        run: python scripts/check-python.py --tests --no-install

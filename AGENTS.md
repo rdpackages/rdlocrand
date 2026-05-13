@@ -33,6 +33,20 @@ and help files:
 Do not use https://rdpackages.github.io/rdlocrand/; it is deprecated and now
 redirects.
 
+## Metadata Standards
+
+List package authors in alphabetical order by last name in package metadata,
+manuals, help files, READMEs, and illustration files. Use these email
+addresses when authors are listed:
+
+- Matias D. Cattaneo: matias.d.cattaneo@gmail.com
+- Ricardo Masini: ricardo.masini@gmail.com
+- Rocio Titiunik: rocio.titiunik@gmail.com
+- Gonzalo Vazquez-Bare: gvazquezbare@gmail.com
+
+Ricardo Masini should appear as an author only for the Python package; do not
+add him to R or Stata package metadata, documentation, or help files.
+
 ## Validation Repositories:
 
 The following repositories contain data and codes using the package:
@@ -53,6 +67,9 @@ R CMD check --no-manual R/rdlocrand
 Rscript scripts/check-r-replication-baseline.R
 Rscript scripts/profile-r-hotpaths.R --quick
 python scripts/check-python.py --syntax-only
+python scripts/check-python.py --tests --no-install
+python scripts/check-python.py --build --no-install
+python scripts/profile-python-hotpaths.py --quick
 python scripts/check-stata-package.py
 ```
 

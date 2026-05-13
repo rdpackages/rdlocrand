@@ -36,11 +36,12 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Run local checks for the rdlocrand Python package.")
     parser.add_argument("--syntax-only", action="store_true", help="Only byte-compile package sources.")
     parser.add_argument("--smoke", action="store_true", help="Run syntax checks and import the public API.")
+    parser.add_argument("--tests", action="store_true", help="Run syntax, smoke, and numerical regression tests.")
     parser.add_argument("--build", action="store_true", help="Run syntax, smoke, and source/wheel build checks.")
     parser.add_argument("--no-install", action="store_true", help="Do not install the package before smoke checks.")
     args = parser.parse_args()
 
-    if not (args.syntax_only or args.smoke or args.build):
+    if not (args.syntax_only or args.smoke or args.tests or args.build):
         args.syntax_only = True
 
     repo_root = find_repo_root(Path.cwd())
@@ -55,7 +56,7 @@ def main() -> int:
         return 1
     print("Python syntax checks passed.")
 
-    if args.smoke or args.build:
+    if args.smoke or args.tests or args.build:
         if not args.no_install:
             run([sys.executable, "-m", "pip", "install", "-e", str(pkg_dir)], cwd=repo_root)
 
@@ -64,6 +65,9 @@ def main() -> int:
             "print('Python import smoke check passed.')"
         )
         run([sys.executable, "-c", smoke_expr], cwd=repo_root)
+
+    if args.tests or args.build:
+        run([sys.executable, "-m", "unittest", "discover", "-s", str(pkg_dir / "tests")], cwd=repo_root)
 
     if args.build:
         run([sys.executable, "-m", "build", str(pkg_dir)], cwd=repo_root)

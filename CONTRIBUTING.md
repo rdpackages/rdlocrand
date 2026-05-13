@@ -36,7 +36,15 @@ active environment:
 
 ```sh
 python -m pip install -e Python/rdlocrand
-python scripts/check-python.py --smoke --no-install
+python scripts/check-python.py --tests --no-install
+python scripts/profile-python-hotpaths.py --quick
+```
+
+For a Python source/wheel build check, install `build` in the active
+environment and run:
+
+```sh
+python scripts/check-python.py --build --no-install
 ```
 
 For Stata package manifest checks:

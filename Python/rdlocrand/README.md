@@ -8,28 +8,37 @@ The regression discontinuity (RD) design is a popular quasi-experimental design 
 - `rdsensitivity` to assess the sensitivity of the results to different window lengths and null hypotheses.
 - `rdrbounds` to construct Rosenbaum bounds for sensitivity to unobserved confounders.
 
-For more details, and related Stata and R packages useful for the analysis of RD designs, visit [https://rdpackages.github.io/](https://rdpackages.github.io/).
+For more details, and related R, Python, and Stata packages useful for the analysis of RD designs, visit [https://rdpackages.github.io/](https://rdpackages.github.io/).
 
-## Author
-Matias Cattaneo, Princeton University. Email: cattaneo@princeton.edu
+## Authors
+Matias D. Cattaneo, Princeton University. Email: matias.d.cattaneo@gmail.com
 
-Rocio Titiunik, Princeton University. Email: titiunik@princeton.edu
+Ricardo Masini, UC Davis. Email: ricardo.masini@gmail.com
 
-Ricardo Masini, UC Davis. Email: rmasini@ucdavis.edu
+Rocio Titiunik, Princeton University. Email: rocio.titiunik@gmail.com
 
-Gonzalo Vazquez-Bare, UC Santa Barbara. Email: gvazquez@econ.ucsb.edu
+Gonzalo Vazquez-Bare, UC Santa Barbara. Email: gvazquezbare@gmail.com
 
 ## Installation
 
-To install/update use pip
-```
+To install or update from PyPI:
+
+```sh
 pip install rdlocrand
 ```
 
-# Usage
-```
+## Usage
+
+```python
 from rdlocrand import rdrandinf, rdwinselect, rdsensitivity, rdrbounds
+
+out = rdrandinf(Y, R, wl=-0.75, wr=0.75, quietly=True)
+print(out["p.value"])
 ```
+
+Package functions return dictionaries whose keys match the names documented in
+the function docstrings, such as `p.value`, `obs.stat`, `results`, and
+`p.values`.
 
 ## References
 

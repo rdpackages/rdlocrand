@@ -173,11 +173,11 @@ Default is {cmd:seed(666)}.{p_end}
 {title:Authors}
 
 {p 4 8}Matias D. Cattaneo, Princeton University, Princeton, NJ.
-{browse "mailto:cattaneo@princeton.edu":cattaneo@princeton.edu}.{p_end}
+{browse "mailto:matias.d.cattaneo@gmail.com":matias.d.cattaneo@gmail.com}.{p_end}
 
 {p 4 8}Rocio Titiunik, Princeton University, Princeton, NJ.
-{browse "mailto:titiunik@princeton.edu":titiunik@princeton.edu}.{p_end}
+{browse "mailto:rocio.titiunik@gmail.com":rocio.titiunik@gmail.com}.{p_end}
 
 {p 4 8}Gonzalo Vazquez-Bare, UC Santa Barbara, Santa Barbara, CA.
-{browse "mailto:gvazquez@econ.ucsb.edu":gvazquez@econ.ucsb.edu}.{p_end}
+{browse "mailto:gvazquezbare@gmail.com":gvazquezbare@gmail.com}.{p_end}
 

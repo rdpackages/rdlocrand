@@ -16,6 +16,12 @@ maintainer explicitly approves a substantive change.
   `https://rdpackages.github.io/rdlocrand/` package-page links with
   `https://rdpackages.github.io/` plus the GitHub repository URL where
   appropriate in package metadata and help files.
+- Added a repository metadata policy requiring author lists to be alphabetical
+  by last name and recording current author email addresses.
+- Updated Stata package manifest/help-file author email links to the current
+  Cattaneo, Titiunik, and Vazquez-Bare addresses.
+- Clarified that Ricardo Masini is an author for the Python package only and
+  should not be listed in R or Stata package files.
 
 ### R
 
@@ -94,3 +100,58 @@ maintainer explicitly approves a substantive change.
 - Validation after the R refactors, speed work, and coverage expansion:
   `testthat::test_local("R/rdlocrand")`, `Rscript scripts/check-r-replication-baseline.R`,
   and `Rscript scripts/check-local.R --pre-push` all passed.
+
+### Python
+
+- Added standard-library `unittest` numerical regression coverage for
+  `rdwinselect()`, `rdrandinf()`, `rdsensitivity()`, and `rdrbounds()` using
+  fixed deterministic data and fixed seeds.
+- Extended `scripts/check-python.py` with `--tests` to run syntax, import smoke,
+  and numerical regression checks; updated the Python GitHub Actions workflow to
+  run the test suite.
+- Moved `matplotlib` imports into plotting branches so the package imports
+  correctly with declared numerical dependencies when plotting is not requested.
+- Added scoped NumPy RNG restoration for seeded Python package calls, preserving
+  existing nested reseeding behavior while restoring the caller's RNG state when
+  the outermost RDLOCRAND call exits.
+- Replaced repeated SciPy rank-sum and KS statistic setup in non-p-value paths
+  with private NumPy/SciPy helper calculations that match SciPy's reference
+  statistics in regression tests.
+- Added a private fast path for the default `rdrbounds()` case
+  (`statistic = "ranksum"`, `p = 0`, uniform kernel, no fuzzy design) that
+  computes Bernoulli rank-sum p-values without repeating full public-function
+  setup.
+- Reduced `rdwinselect()` balance-loop setup overhead by computing the
+  covariate-complete row mask once after sorting and applying it inside each
+  candidate window.
+- Restored several documented Python paths that errored under current
+  dependencies without changing established regression outputs: lazy plotting
+  imports, default window extraction from `rdwinselect()` DataFrame results,
+  Hotelling permutation sampling, and HC2 covariance access for weighted paths.
+- Updated Python package metadata and README author emails, canonical package
+  URLs, GPL-3.0 license metadata, and supported Python version floor.
+- Standardized Python author order by last name and updated Ricardo Masini's
+  email to ricardo.masini@gmail.com across metadata, README, and function
+  docstrings.
+- Added `scripts/profile-python-hotpaths.py` for repeatable quick profiling of
+  representative Python workloads.
+- Audited and corrected the Python-only `rdrbounds()` `p.values` row selection
+  when `fmpval = False`: Python now returns the Bernoulli p-value row, matching
+  the R implementation, instead of the unused zero-initialized fixed-margins
+  row. Added regression coverage using a nonzero p-value case.
+- Modernized Python packaging notes and documentation: refreshed `ToBuild.txt`
+  as a current build/release checklist, updated the build-system requirement,
+  cleaned package metadata with an SPDX-style license identifier and package-level
+  license file, documented the Python build check command, and aligned public
+  Python docstrings with the R documentation structure and actual returned
+  dictionary keys.
+- Added Python public API regression coverage for exported functions, leading
+  argument names, and representative returned dictionary keys.
+- Verified a clean wheel install in a temporary virtual environment and ran
+  import plus representative `rdrandinf()`, `rdwinselect()`, `rdsensitivity()`,
+  and `rdrbounds()` calls from the installed wheel.
+- Validation after the first Python modernization pass:
+  `python scripts/check-python.py --syntax-only`,
+  `.venv\Scripts\python.exe scripts/check-python.py --tests --no-install`, and
+  `.venv\Scripts\python.exe scripts/profile-python-hotpaths.py --quick` all
+  passed.
