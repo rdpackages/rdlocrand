@@ -197,6 +197,14 @@ maintainer explicitly approves a substantive change.
   behavior: construct the treatment indicator once, expand `wlist`,
   `wlist_left`, and `tlist` once, and reuse those expanded lists in later
   loops.
+- Expanded Stata `rdrandinf` numerical baselines for rank-sum,
+  Kolmogorov-Smirnov, Bernoulli, polynomial-adjusted, and simple fuzzy paths.
+- Added `scripts/profile-stata-rdrandinf.py` and
+  `scripts/profile-stata-rdrandinf.do` for focused Stata profiling of
+  `rdrandinf` fixed-margins, Bernoulli, statistic, and adjustment paths.
+  Full StataNow 19 profiling identified fixed-margins `diffmeans` as the
+  main remaining `rdrandinf` outlier at about 1.25 seconds for 200
+  replications.
 - Validation after the Stata help/static-check/runtime/numerical pass:
   `python scripts/check-stata-package.py --strict-unlisted`,
   `python scripts/check-stata-runtime.py`, and

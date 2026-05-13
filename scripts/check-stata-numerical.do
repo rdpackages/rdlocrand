@@ -85,6 +85,33 @@ assert_close RI_n r(N) 37
 assert_close RI_n_left r(N_left) 15
 assert_close RI_n_right r(N_right) 22
 
+quietly rdrandinf demvoteshfor2 demmv, wl(-.75) wr(.75) statistic(ranksum) reps(19) seed(12345)
+assert_close RIR_randpval r(randpval) 0
+assert_close RIR_asy_pval r(asy_pval) .0012945790640629
+assert_close RIR_obs_stat r(obs_stat) -3.217178769426679
+
+quietly rdrandinf demvoteshfor2 demmv, wl(-.75) wr(.75) statistic(ksmirnov) reps(19) seed(12345)
+assert_close RIK_randpval r(randpval) 0
+assert_close RIK_asy_pval r(asy_pval) .008803820266996901
+assert_close RIK_obs_stat r(obs_stat) .5515151515151515
+
+capture drop ri_probs
+quietly generate double ri_probs = .5 if demmv >= -.75 & demmv <= .75 & demvoteshfor2 != .
+quietly rdrandinf demvoteshfor2 demmv, wl(-.75) wr(.75) bernoulli(ri_probs) reps(19) seed(12345)
+assert_close RIB_randpval r(randpval) 0
+assert_close RIB_asy_pval r(asy_pval) .0000795467132186
+assert_close RIB_obs_stat r(obs_stat) 9.68949952559038
+
+quietly rdrandinf demvoteshfor2 demmv, wl(-.75) wr(.75) p(1) reps(19) seed(12345)
+assert_close RIP1_randpval r(randpval) 0
+assert_close RIP1_asy_pval r(asy_pval) .0659656703091592
+assert_close RIP1_obs_stat r(obs_stat) 15.29651683658787
+
+quietly rdrandinf demvoteshfor2 demmv, wl(-.75) wr(.75) fuzzy(demwinprv1) reps(19) seed(12345)
+assert_close RIF_randpval r(randpval) 0
+assert_close RIF_asy_pval r(asy_pval) .0000795467132186
+assert_close RIF_obs_stat r(obs_stat) 9.68949952559038
+
 quietly rdrandinf demvoteshfor2 demmv, wl(-.75) wr(.75) reps(19) seed(12345) statistic(all)
 matrix RIA_pval = r(p_val)
 matrix RIA_asy = r(asy_pval)

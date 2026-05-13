@@ -74,6 +74,7 @@ python scripts/check-stata-package.py --strict-unlisted
 python scripts/check-stata-runtime.py
 python scripts/check-stata-numerical.py
 python scripts/profile-stata-hotpaths.py --quick
+python scripts/profile-stata-rdrandinf.py --quick
 ```
 
 For the R GitHub Actions equivalent:
@@ -138,6 +139,7 @@ For local Stata profiling before and after performance refactors, run:
 
 ```sh
 python scripts/profile-stata-hotpaths.py --quick
+python scripts/profile-stata-rdrandinf.py --quick
 ```
 
 ## Editing Guidelines

@@ -72,6 +72,12 @@ For local Stata performance profiling:
 python scripts/profile-stata-hotpaths.py --quick
 ```
 
+For focused Stata profiling of `rdrandinf` paths:
+
+```sh
+python scripts/profile-stata-rdrandinf.py --quick
+```
+
 For the optional local R replication baseline, which requires the external
 replication folders listed in `AGENTS.md`:
 
