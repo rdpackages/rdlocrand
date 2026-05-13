@@ -181,6 +181,14 @@ maintainer explicitly approves a substantive change.
   workload, versus about 1.12 seconds for `rdrandinf_diffmeans`, 0.98 seconds
   for `rdsensitivity_grid`, 0.66 seconds for `rdrandinf_all`, and 0.49 seconds
   for `rdwinselect_balance`.
+- Added a private fast path in `stata/rdrbounds.ado` for the default
+  rank-sum, no-polynomial, uniform-kernel, non-fuzzy `bound(both)` sensitivity
+  branch. The helper computes Bernoulli rank-sum p-values directly in Mata
+  while preserving the existing per-call seed behavior and falling back to
+  `rdrandinf` for other options.
+- After the fast path, the full StataNow 19 profiling workload reduced
+  `rdrbounds_both` from about 31.75 seconds to about 0.79 seconds, with the
+  fixed-seed Stata numerical baseline unchanged.
 - Validation after the Stata help/static-check/runtime/numerical pass:
   `python scripts/check-stata-package.py --strict-unlisted`,
   `python scripts/check-stata-runtime.py`, and

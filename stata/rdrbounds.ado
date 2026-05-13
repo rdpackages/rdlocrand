@@ -134,7 +134,8 @@ program define rdrbounds, rclass sortpreserve
 		local eval_opt "evall(`evall') evalr(`evalr')"
 	}
 
-	
+	local fast_ranksum = ("`stat'"=="ranksum" & `p'==0 & ("`kernel'"==""|"`kernel'"=="uniform") & "`fuzzy'"=="")
+
 ********************************************************************************
 ** Randomization p-value
 ********************************************************************************
@@ -280,19 +281,27 @@ program define rdrbounds, rclass sortpreserve
 				local count_u = 1
 				foreach nu of numlist `ulist'{
 
-					qui {					
+					qui {
 						gsort -`outvar'
 						gen `unobs_h' = _n<=`nu'
 						sort `outvar'
 						gen `unobs_l' = _n<=`nu'
-						
+
 						gen `prob_h' = `ph'*`unobs_h' + `pl'*(1-`unobs_h')
 						gen `prob_l' = `ph'*`unobs_l' + `pl'*(1-`unobs_l')
-						
-						rdrandinf `outvar' `runvar', wl(-`w') wr(`w') bernoulli(`prob_l') reps(`reps') ///
+					}
+
+					if `fast_ranksum' {
+						qui rdrbounds_fast_ranksum `outvar' `runvar', bernoulli(`prob_l') reps(`reps') nulltau(`nulltau') seed(`seed')
+						local pval_l = r(p)
+						qui rdrbounds_fast_ranksum `outvar' `runvar', bernoulli(`prob_h') reps(`reps') nulltau(`nulltau') seed(`seed')
+						local pval_h = r(p)
+					}
+					else {
+						qui rdrandinf `outvar' `runvar', wl(-`w') wr(`w') bernoulli(`prob_l') reps(`reps') ///
 							p(`p') nulltau(`nulltau') `stat_opt' `eval_opt' `kernel_opt' `fuzzy_opt' seed(`seed')
 						local pval_l = r(randpval)
-						rdrandinf `outvar' `runvar', wl(-`w') wr(`w') bernoulli(`prob_h') reps(`reps') ///
+						qui rdrandinf `outvar' `runvar', wl(-`w') wr(`w') bernoulli(`prob_h') reps(`reps') ///
 							p(`p') nulltau(`nulltau') `stat_opt' `eval_opt' `kernel_opt' `fuzzy_opt'  seed(`seed')
 						local pval_h = r(randpval)
 					}
@@ -500,6 +509,76 @@ program define rdrbounds, rclass sortpreserve
 	}
 end
 
+
+capture program drop rdrbounds_fast_ranksum
+program define rdrbounds_fast_ranksum, rclass
+	syntax varlist(min=2 max=2 numeric) [if] [in], bernoulli(varname numeric) reps(integer) [nulltau(real 0) seed(integer 666)]
+
+	tokenize `varlist'
+	local outvar "`1'"
+	local runvar "`2'"
+	marksample touse
+	markout `touse' `bernoulli'
+
+	tempvar treated yadj ranks
+	qui gen double `treated' = `runvar' >= 0 if `runvar'!=. & `touse'
+	qui gen double `yadj' = `outvar' - `nulltau'*`treated' if `touse'
+	qui egen double `ranks' = rank(`yadj') if `touse'
+
+	if `seed'>=0{
+		set seed `seed'
+	}
+	else if `seed'!=-1{
+		di as error "seed must be a positive integer (or -1 for system seed)"
+		exit 198
+	}
+
+	mata: st_numscalar("rdrbounds_fast_p", rdrbounds_fast_ranksum_p("`ranks'", "`treated'", "`bernoulli'", "`touse'", `reps'))
+	return scalar p = scalar(rdrbounds_fast_p)
+end
+
+capture mata: mata drop rdrbounds_fast_ranksum_stat()
+capture mata: mata drop rdrbounds_fast_ranksum_p()
+mata:
+real scalar rdrbounds_fast_ranksum_stat(real vector ranks, real vector assignment)
+{
+	real scalar n, n1, n0, tstat, estat, rankmean, rankvar, vstat
+
+	n = rows(assignment)
+	n1 = sum(assignment)
+	n0 = n - n1
+	if (n0 == 0 | n1 == 0) return(.)
+
+	tstat = sum(select(ranks, assignment :== 0))
+	estat = n0 * (n + 1) / 2
+	rankmean = mean(ranks)
+	rankvar = sum((ranks :- rankmean):^2) / (n - 1)
+	vstat = n0 * n1 * rankvar / n
+	return((tstat - estat) / sqrt(vstat))
+}
+
+real scalar rdrbounds_fast_ranksum_p(string scalar rankvar, string scalar assignmentvar, string scalar probvar, string scalar tousevar, real scalar reps)
+{
+	real vector ranks, assignment, probs, stats, valid, sample
+	real scalar i, obs
+
+	ranks = st_data(., rankvar, tousevar)
+	assignment = st_data(., assignmentvar, tousevar)
+	probs = st_data(., probvar, tousevar)
+	obs = rdrbounds_fast_ranksum_stat(ranks, assignment)
+	stats = J(reps, 1, .)
+
+	for (i = 1; i <= reps; i++) {
+		sample = runiform(rows(assignment), 1) :<= probs
+		if (mean(sample) != 1 & mean(sample) != 0) {
+			stats[i] = rdrbounds_fast_ranksum_stat(ranks, sample)
+		}
+	}
+
+	valid = stats :< .
+	return(mean(abs(select(stats, valid)) :>= abs(obs)))
+}
+end
 
 
 
