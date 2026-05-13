@@ -1,0 +1,31 @@
+on:
+  push:
+    branches: [main, master]
+    paths:
+      - "stata/**"
+      - "scripts/check-stata-package.py"
+      - ".github/workflows/Stata-package.yaml"
+  pull_request:
+    paths:
+      - "stata/**"
+      - "scripts/check-stata-package.py"
+      - ".github/workflows/Stata-package.yaml"
+  workflow_dispatch:
+
+name: Stata package
+
+permissions: read-all
+
+jobs:
+  Stata-manifest:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Validate Stata package manifest
+        run: python scripts/check-stata-package.py

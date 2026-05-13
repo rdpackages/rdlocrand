@@ -1,0 +1,49 @@
+on:
+  push:
+    branches: [main, master]
+    paths:
+      - "Python/rdlocrand/**"
+      - "scripts/check-python.py"
+      - ".github/workflows/Python-package.yaml"
+  pull_request:
+    paths:
+      - "Python/rdlocrand/**"
+      - "scripts/check-python.py"
+      - ".github/workflows/Python-package.yaml"
+  workflow_dispatch:
+
+name: Python package
+
+permissions: read-all
+
+jobs:
+  Python-check:
+    runs-on: ${{ matrix.config.os }}
+    name: ${{ matrix.config.os }} (Python ${{ matrix.config.python }})
+
+    strategy:
+      fail-fast: false
+      matrix:
+        config:
+          - {os: ubuntu-latest, python: "3.10"}
+          - {os: ubuntu-latest, python: "3.11"}
+          - {os: ubuntu-latest, python: "3.12"}
+          - {os: macos-latest, python: "3.12"}
+          - {os: windows-latest, python: "3.12"}
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: ${{ matrix.config.python }}
+          cache: pip
+          cache-dependency-path: Python/rdlocrand/setup.cfg
+
+      - name: Install package
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e Python/rdlocrand
+
+      - name: Run Python smoke check
+        run: python scripts/check-python.py --smoke --no-install

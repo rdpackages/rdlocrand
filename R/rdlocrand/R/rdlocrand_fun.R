@@ -4,10 +4,73 @@
 # Authors: Matias Cattaneo, Rocio Titiunik, Gonzalo Vazquez-Bare
 #################################################################
 
+rdlocrand_rng_env <- new.env(parent = emptyenv())
+rdlocrand_rng_env$depth <- 0L
+rdlocrand_rng_env$had_seed <- FALSE
+rdlocrand_rng_env$seed <- NULL
+
+rdlocrand_seed_scope <- function(seed){
+  if (length(seed)!=1L || is.na(seed) || !is.numeric(seed) || !(seed>0 || seed==-1)){
+    stop('Seed has to be a positive integer or -1 for system seed')
+  }
+
+  env <- rdlocrand_rng_env
+  outermost <- env$depth==0L
+
+  if (outermost){
+    env$had_seed <- exists(".Random.seed", envir = .GlobalEnv, inherits = FALSE)
+    if (env$had_seed){
+      env$seed <- get(".Random.seed", envir = .GlobalEnv, inherits = FALSE)
+    } else {
+      env$seed <- NULL
+    }
+  }
+
+  env$depth <- env$depth + 1L
+
+  if (seed>0){
+    set.seed(seed)
+  }
+
+  restored <- FALSE
+  function(){
+    if (restored){
+      return(invisible(NULL))
+    }
+    restored <<- TRUE
+    env$depth <- max(0L, env$depth - 1L)
+    if (outermost){
+      if (env$had_seed){
+        assign(".Random.seed", env$seed, envir = .GlobalEnv)
+      } else if (exists(".Random.seed", envir = .GlobalEnv, inherits = FALSE)){
+        rm(".Random.seed", envir = .GlobalEnv)
+      }
+      env$had_seed <- FALSE
+      env$seed <- NULL
+    }
+    invisible(NULL)
+  }
+}
+
+rdlocrand_validate_choice <- function(value, choices, message){
+  if (length(value)!=1L || is.na(value) || !(value %in% choices)){
+    stop(message, call. = FALSE)
+  }
+  invisible(value)
+}
+
 
 #################################################################
 # rdrandinf observed statistics and asymptotic p-values
 #################################################################
+
+ksmirnov.statistic <- function(x,y){
+  n.x <- length(x)
+  n.y <- length(y)
+  z <- c(x,y)
+  w <- c(rep(1/n.x,n.x),rep(-1/n.y,n.y))
+  max(abs(cumsum(w[order(z)])))
+}
 
 rdrandinf.model <- function(Y,D,statistic,pvalue=FALSE,kweights,endogtr,delta=NULL){
 
@@ -53,30 +116,32 @@ rdrandinf.model <- function(Y,D,statistic,pvalue=FALSE,kweights,endogtr,delta=NU
   }
 
   if (statistic=='ksmirnov'){
-    stat <- NULL
-    asy.pval <- NULL
+    stat <- numeric(ncol(Y))
+    if (pvalue==TRUE){
+      asy.pval <- numeric(ncol(Y))
+      asy.power <- NA
+    }
     for (k in 1:ncol(Y)){
-      aux.ks <- ks.test(Y[D==0,k],Y[D==1,k])
-      stat <- c(stat,aux.ks$statistic)
       if (pvalue==TRUE){
-        asy.pval <- c(asy.pval,aux.ks$p.value)
-        asy.power <- NA
+        aux.ks <- ks.test(Y[D==0,k],Y[D==1,k])
+        stat[k] <- aux.ks$statistic
+        asy.pval[k] <- aux.ks$p.value
+      } else {
+        stat[k] <- ksmirnov.statistic(Y[D==0,k],Y[D==1,k])
       }
     }
   }
 
   if (statistic=='ranksum'){
-    stat <- NULL
-    asy.pval <- NULL
+    stat <- numeric(ncol(Y))
     for (k in 1:ncol(Y)){
-      Ustat <- wilcox.test(Y[D==0,k],Y[D==1,k])$statistic
-      Tstat <- Ustat + n0*(n0+1)/2
       ri <- rank(Y[,k])
+      Tstat <- sum(ri[D==0])
       s2 <- var(ri)
       ETstat <- n0*(n+1)/2
       VTstat <- n0*n1*s2/n
       se <- sqrt(VTstat)
-      stat <- c(stat,(Tstat-ETstat)/se)
+      stat[k] <- (Tstat-ETstat)/se
     }
     if (pvalue==TRUE){
       asy.pval <- 2*pnorm(-abs(stat))
@@ -89,10 +154,13 @@ rdrandinf.model <- function(Y,D,statistic,pvalue=FALSE,kweights,endogtr,delta=NU
 
   if (statistic=='all'){
     stat1 <- mean(Y[D==1])-mean(Y[D==0])
-    aux.ks <- ks.test(Y[D==0],Y[D==1])
-    stat2 <- aux.ks$statistic
-    Ustat <- wilcox.test(Y[D==0],Y[D==1])$statistic
-    Tstat <- Ustat + n0*(n0+1)/2
+    if (pvalue==TRUE){
+      aux.ks <- ks.test(Y[D==0],Y[D==1])
+      stat2 <- aux.ks$statistic
+    } else {
+      stat2 <- ksmirnov.statistic(Y[D==0],Y[D==1])
+    }
+    Tstat <- sum(rank(Y)[D==0])
     ri <- seq(1,n)
     s2 <- var(ri)
     ETstat <- n0*(n+1)/2
@@ -155,6 +223,45 @@ rdrandinf.model <- function(Y,D,statistic,pvalue=FALSE,kweights,endogtr,delta=NU
   return(output)
 }
 
+#################################################################
+# Fast Bernoulli p-value for rank-sum randomization tests
+#################################################################
+
+rdrandinf.bernoulli.ranksum.pvalue <- function(Y,R,prob,reps,nulltau=0,seed=666){
+
+  D <- as.numeric(R >= 0)
+  Y.adj.null <- Y - nulltau*D
+  ranks <- rank(Y.adj.null)
+  rank.var <- var(ranks)
+  n <- length(D)
+
+  ranksum.stat <- function(D.sample){
+    n1 <- sum(D.sample)
+    n0 <- n - n1
+    Tstat <- sum(ranks[D.sample==0])
+    ETstat <- n0*(n+1)/2
+    VTstat <- n0*n1*rank.var/n
+    (Tstat-ETstat)/sqrt(VTstat)
+  }
+
+  obs.stat <- ranksum.stat(D)
+  stats.distr <- array(NA,dim=c(reps,1))
+
+  restore_rng <- rdlocrand_seed_scope(seed)
+  on.exit(restore_rng(), add = TRUE)
+
+  for (i in 1:reps) {
+    D.sample <- as.numeric(runif(n)<=prob)
+    if (mean(D.sample)==1 | mean(D.sample)==0){
+      stats.distr[i,] <- NA
+    } else {
+      stats.distr[i,] <- ranksum.stat(D.sample)
+    }
+  }
+
+  mean(abs(stats.distr) >= abs(obs.stat),na.rm=TRUE)
+}
+
 
 #################################################################
 # Hotelling's T2 statistic
@@ -203,10 +310,10 @@ findwobs <- function(wobs,nwin,posl,posr,R,dups){
   posrold <- posr
 
   win <- 1
-  wlist_left <- NULL
-  poslist_left <- NULL
-  wlist_right <- NULL
-  poslist_right <- NULL
+  wlist_left <- vector("list", nwin_mp)
+  poslist_left <- vector("list", nwin_mp)
+  wlist_right <- vector("list", nwin_mp)
+  poslist_right <- vector("list", nwin_mp)
 
   #while(win<=nwin & wobs<min(posl,Nt-(posr-Nc-1))){
   while(win<=nwin_mp & wobs<max(posl,Nt-(posr-Nc-1))){
@@ -225,16 +332,30 @@ findwobs <- function(wobs,nwin,posl,posr,R,dups){
     wlength_left <- R[posl]
     wlength_right <- R[posr]
 
-    wlist_left <- c(wlist_left,wlength_left)
-    poslist_left <- c(poslist_left,posl)
-    wlist_right <- c(wlist_right,wlength_right)
-    poslist_right <- c(poslist_right,posr)
+    wlist_left[[win]] <- wlength_left
+    poslist_left[[win]] <- posl
+    wlist_right[[win]] <- wlength_right
+    poslist_right[[win]] <- posr
 
     posl <- max(posl - dups[posl],1)
     posr <- min(posr + dups[posr],N)
 
     win <- win + 1
 
+  }
+
+  used_windows <- win - 1
+  if (used_windows > 0){
+    keep_windows <- seq_len(used_windows)
+    wlist_left <- unlist(wlist_left[keep_windows])
+    poslist_left <- unlist(poslist_left[keep_windows])
+    wlist_right <- unlist(wlist_right[keep_windows])
+    poslist_right <- unlist(poslist_right[keep_windows])
+  } else {
+    wlist_left <- NULL
+    poslist_left <- NULL
+    wlist_right <- NULL
+    poslist_right <- NULL
   }
 
   output <- list(posl = posl, posr = posr, wlength_left = wlength_left, wlength_right = wlength_right,
@@ -257,7 +378,7 @@ findwobs_sym <- function(wobs,nwin,posl,posr,R,dups){
   Nt <- sum(R>=0)
   poslold <- posl
   posrold <- posr
-  wlist <- NULL
+  wlist <- vector("list", nwin)
   win <- 1
 
   while(win<=nwin & wobs<min(posl,Nt-(posr-Nc-1))){
@@ -282,12 +403,19 @@ findwobs_sym <- function(wobs,nwin,posl,posr,R,dups){
     }
 
     wlength <- max(-R[posl],R[posr])
-    wlist <- c(wlist,wlength)
+    wlist[[win]] <- wlength
 
     posl <- max(posl - dups[posl],1)
     posr <- min(posr + dups[posr],N)
     win <- win + 1
 
+  }
+
+  used_windows <- win - 1
+  if (used_windows > 0){
+    wlist <- unlist(wlist[seq_len(used_windows)])
+  } else {
+    wlist <- NULL
   }
 
   return(wlist)
@@ -305,24 +433,8 @@ find_CI <- function(pvals,alpha,tlist){
     CI <- matrix(NA,nrow=1,ncol=2)
   } else{
     whichvec <- which(pvals>=alpha)
-    index_l <- min(whichvec)
-    index_r <- max(whichvec)
-    indexmat <- matrix(c(index_l,index_r),nrow=1,ncol=2)
-
-    whichvec_cut <- whichvec
-    dif <- diff(whichvec_cut)
-    while(all(dif==1)==FALSE){
-      cut <- min(which(dif!=1))
-      auxvec <- whichvec_cut[1:cut]
-      indexmat <- rbind(indexmat,c(min(auxvec),max(auxvec)))
-      whichvec_cut <- whichvec_cut[(cut+1):length(whichvec_cut)]
-
-      dif <- diff(whichvec_cut)
-    }
-    if(nrow(indexmat)>1){
-      indexmat <- indexmat[2:nrow(indexmat),]
-      indexmat <- rbind(indexmat,c(min(whichvec_cut),max(whichvec_cut)))
-    }
+    breaks <- c(0,which(diff(whichvec)!=1),length(whichvec))
+    indexmat <- cbind(whichvec[breaks[-length(breaks)]+1],whichvec[breaks[-1]])
     CI <- t(apply(indexmat,1,function(x) tlist[x]))
   }
   return(CI)
@@ -353,12 +465,14 @@ wlength <- function(R,D,num){
 #################################################################
 
 findstep <- function(R,D,obsmin,obsstep,times) {
-  S <- NULL
-  for (i in 1:times){
+  step_indices <- 1:times
+  S <- numeric(length(step_indices))
+  for (j in seq_along(step_indices)){
+    i <- step_indices[j]
     U <- wlength(R,D,obsmin+obsstep*i)
     L <- wlength(R,D,obsmin+obsstep*(i-1))
     Snext <- U - L
-    S <- c(S,Snext)
+    S[j] <- Snext
   }
   step <- max(S)
   return(step)

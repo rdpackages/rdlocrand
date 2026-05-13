@@ -50,7 +50,7 @@ for an introduction to this methodology. See also Rosenbaum (2002) for a backgro
 
 {p 4 8}A detailed introduction to this command is given in
 {browse "https://rdpackages.github.io/references/Cattaneo-Titiunik-VazquezBare_2016_Stata.pdf":Cattaneo, Titiunik and Vazquez-Bare (2016)}.{p_end}
-{p 8 8}Companion {browse "www.r-project.org":R} functions are also available {browse "https://rdpackages.github.io/rdlocrand":here}.{p_end}
+{p 8 8}Companion {browse "www.r-project.org":R} functions are also available {browse "https://rdpackages.github.io/":here}.{p_end}
 
 {p 4 8}Companion functions are {help rdrandinf:rdrandinf}, {help rdsensitivity:rdwinselect} and {help rdrbounds:rdsensitivity}.{p_end}
 

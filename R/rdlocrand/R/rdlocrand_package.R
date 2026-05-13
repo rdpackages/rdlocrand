@@ -16,15 +16,16 @@
 #' around the cutoff in which randomization is likely to hold, \code{\link{rdsensitivity}}
 #' to assess the sensitivity of the results to different window lengths and null hypotheses
 #' and \code{\link{rdrbounds}} to construct Rosenbaum bounds for sensitivity to
-#' unobserved confounders. For more details, and related \code{Stata} and \code{R} packages
+#' unobserved confounders. For more details, and related \code{R}, \code{Python},
+#' and \code{Stata} packages
 #'  useful for analysis of RD designs, visit \url{https://rdpackages.github.io/}.
 #'
 #' @author
-#' Matias Cattaneo, Princeton University. \email{cattaneo@princeton.edu}
+#' Matias D. Cattaneo, Princeton University. \email{matias.d.cattaneo@gmail.com}
 #'
-#' Rocio Titiunik, Princeton University. \email{titiunik@princeton.edu}
+#' Rocio Titiunik, Princeton University. \email{rocio.titiunik@gmail.com}
 #'
-#' Gonzalo Vazquez-Bare, UC Santa Barbara. \email{gvazquez@econ.ucsb.edu}
+#' Gonzalo Vazquez-Bare, UC Santa Barbara. \email{gvazquezbare@gmail.com}
 #'
 #' @references
 #' Cattaneo, M.D., B. Frandsen and R. Titiunik. (2015).  \href{https://rdpackages.github.io/references/Cattaneo-Frandsen-Titiunik_2015_JCI.pdf}{Randomization Inference in the Regression Discontinuity Design: An Application to Party Advantages in the U.S. Senate}. \emph{Journal of Causal Inference} 3(1): 1-24.
@@ -51,7 +52,6 @@
 #' @importFrom stats sd
 #' @importFrom stats var
 #' @importFrom stats vcov
-#' @importFrom stats wilcox.test
 #'
 #' @aliases rdlocrand_package
 "_PACKAGE"

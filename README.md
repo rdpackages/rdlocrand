@@ -1,20 +1,11 @@
-# RDLOCRAND
+# Local-Randomization Estimation, Inference, and Visualization Methods for RD Designs
 
-The `rdlocrand` package provides Stata and R implementations of statistical inference and graphical procedures for Regression Discontinuity designs employing local randomization methods. It provides point estimators, confidence intervals estimators, binomial manipulation testing, windows selectors, automatic plots, sensitivity analysis, and other related features.
+The `rdlocrand` package provides Python, R, and Stata implementations of statistical inference and graphical procedures for Regression Discontinuity designs employing local randomization methods. It provides point estimators, confidence intervals estimators, binomial manipulation testing, windows selectors, automatic plots, sensitivity analysis, and other related features.
 
-This work was supported in part by the National Science Foundation through grants [SES-1357561](https://www.nsf.gov/awardsearch/showAward?AWD_ID=1357561).
-
-## Website
-
-https://rdpackages.github.io/rdlocrand
-
-## Queries and Requests
-
-Please email: [rdpackages@googlegroups.com](mailto:rdpackages@googlegroups.com)
 
 ## Python Implementation
 
-To install/update in R type:
+To install/update in Python type:
 ```
 pip install rdlocrand
 ```
@@ -63,7 +54,9 @@ _Journal of Causal Inference_ 3(1): 1-24.
 - Cattaneo, Titiunik and Vazquez-Bare (2017): [Comparing Inference Approaches for RD Designs: A Reexamination of the Effect of Head Start on Child Mortality](https://rdpackages.github.io/references/Cattaneo-Titiunik-VazquezBare_2017_JPAM.pdf).<br>
 _Journal of Policy Analysis and Management_ 36(3): 643-681.
 
+## Funding
+
+This work was supported in part by the National Science Foundation through grants [SES-1357561](https://www.nsf.gov/awardsearch/showAward?AWD_ID=1357561).
+
+
 <br><br>
-
-
-

@@ -12,11 +12,11 @@
 #'
 #'
 #' @author
-#' Matias Cattaneo, Princeton University. \email{cattaneo@princeton.edu}
+#' Matias D. Cattaneo, Princeton University. \email{matias.d.cattaneo@gmail.com}
 #'
-#' Rocio Titiunik, Princeton University. \email{titiunik@princeton.edu}
+#' Rocio Titiunik, Princeton University. \email{rocio.titiunik@gmail.com}
 #'
-#' Gonzalo Vazquez-Bare, UC Santa Barbara. \email{gvazquez@econ.ucsb.edu}
+#' Gonzalo Vazquez-Bare, UC Santa Barbara. \email{gvazquezbare@gmail.com}
 #'
 #' @references
 #'
@@ -29,9 +29,9 @@
 #' @param cutoff the RD cutoff (default is 0).
 #' @param wl the left limit of the window. The default takes the minimum of the running variable.
 #' @param wr the right limit of the window. The default takes the maximum of the running variable.
-#' @param statistic the statistic to be used in the balance tests. Allowed options are \code{diffmeans} (difference in means statistic), \code{ksmirnov} (Kolmogorov-Smirnov statistic) and \code{ranksum} (Wilcoxon-Mann-Whitney standardized statistic). Default option is \code{diffmeans}. The statistic \code{ttest} is equivalent to \code{diffmeans} and included for backward compatibility.
+#' @param statistic the statistic to be used in the balance tests. Allowed options are \code{diffmeans} (difference in means statistic), \code{ksmirnov} (Kolmogorov-Smirnov statistic), \code{ranksum} (Wilcoxon-Mann-Whitney standardized statistic), and \code{all}. Default option is \code{diffmeans}. The statistic \code{ttest} is equivalent to \code{diffmeans} and included for backward compatibility.
 #' @param p the order of the polynomial for outcome transformation model (default is 0).
-#' @param evall the point at the left of the cutoff at which to evaluate the transformed outcome is evaluated. Default is the cutoff value.
+#' @param evall the point at the left of the cutoff at which the transformed outcome is evaluated. Default is the cutoff value.
 #' @param evalr specifies the point at the right of the cutoff at which the transformed outcome is evaluated. Default is the cutoff value.
 #' @param kernel specifies the type of kernel to use as weighting scheme. Allowed kernel types are \code{uniform} (uniform kernel), \code{triangular} (triangular kernel) and \code{epan} (Epanechnikov kernel). Default is \code{uniform}.
 #' @param fuzzy indicates that the RD design is fuzzy. \code{fuzzy} can be specified as a vector containing the values of the endogenous treatment variable, or as a list where the first element is the vector of endogenous treatment values and the second element is a string containing the name of the statistic to be used. Allowed statistics are \code{itt} (intention-to-treat statistic) and \code{tsls} (2SLS statistic). Default statistic is \code{ar}. The \code{tsls} statistic relies on large-sample approximation.
@@ -62,27 +62,31 @@
 #' @param obsstep the minimum number of observations to be added on each side of the cutoff for the sequence of fixed-increment nested windows. Default is 2. This option is deprecated and only included for backward compatibility.
 #'
 #' @return
-#' \item{sumstats}{summary statistics}
-#' \item{obs.stat}{observed statistic(s)}
-#' \item{p.value}{randomization p-value(s)}
-#' \item{asy.pvalue}{asymptotic p-value(s)}
-#' \item{window}{chosen window}
-#' \item{ci}{confidence interval (only if \code{ci} option is specified)}
-#' \item{interf.ci}{confidence interval under interferecen (only if \code{interfci} is specified)}
+#' A list containing:
+#' \item{sumstats}{matrix of full-sample and window-specific summary statistics.}
+#' \item{obs.stat}{observed statistic or statistics.}
+#' \item{p.value}{randomization p-value or p-values.}
+#' \item{asy.pvalue}{asymptotic p-value or p-values.}
+#' \item{window}{chosen window endpoints.}
+#' \item{ci}{confidence interval; included only when \code{ci} is specified.}
+#' \item{interf.ci}{confidence interval under interference; included only when
+#' \code{interfci} is specified.}
 #'
 #' @examples
 #' # Toy dataset
+#' set.seed(123)
 #' X <- array(rnorm(200),dim=c(100,2))
-#' R <- X[1,] + X[2,] + rnorm(100)
+#' R <- X[,1] + X[,2] + rnorm(100)
 #' Y <- 1 + R -.5*R^2 + .3*R^3 + (R>=0) + rnorm(100)
 #' # Randomization inference in window (-.75,.75)
-#' tmp <- rdrandinf(Y,R,wl=-.75,wr=.75)
+#' tmp <- rdrandinf(Y,R,wl=-.75,wr=.75,quietly=TRUE)
 #' # Randomization inference in window (-.75,.75), all statistics
-#' tmp <- rdrandinf(Y,R,wl=-.75,wr=.75,statistic='all')
+#' tmp <- rdrandinf(Y,R,wl=-.75,wr=.75,statistic='all',quietly=TRUE)
 #' # Randomization inference with window selection
 #' # Note: low number of replications to speed up process.
 #' # The user should increase the number of replications.
-#' tmp <- rdrandinf(Y,R,statistic='all',covariates=X,wmin=.5,wstep=.125,rdwreps=500)
+#' tmp <- rdrandinf(Y,R,statistic='all',covariates=X,wmin=.5,wstep=.125,
+#'                  rdwreps=500,level=0,quietly=TRUE)
 #'
 #'
 #'
@@ -184,10 +188,18 @@ rdrandinf <- function(Y,R,
   if (p<0) stop('p must be a positive integer')
 
   if (is.null(fuzzy)){
-    if (statistic!='diffmeans' & statistic!='ttest' & statistic!='ksmirnov' & statistic!='ranksum' & statistic!='all') stop(paste(statistic,'not a valid statistic'))
+    rdlocrand_validate_choice(
+      statistic,
+      c('diffmeans','ttest','ksmirnov','ranksum','all'),
+      paste(paste(statistic, collapse = ', '),'not a valid statistic')
+    )
   }
 
-  if (kernel!='uniform' & kernel!='triangular' & kernel!='epan') stop(paste(kernel,'not a valid kernel'))
+  rdlocrand_validate_choice(
+    kernel,
+    c('uniform','triangular','epan'),
+    paste(paste(kernel, collapse = ', '),'not a valid kernel')
+  )
   if (kernel!='uniform' & !is.null(evall) & !is.null(evalr)){
     if (evall!=cutoff | evalr!=cutoff) stop('kernel only allowed when evall=evalr=cutoff')
   }
@@ -220,11 +232,8 @@ rdrandinf <- function(Y,R,
   n1 <- sum(D)
   n0 <- n - n1
 
-  if (seed>0){
-    set.seed(seed)
-  } else if (seed!=-1){
-    stop('Seed has to be a positive integer or -1 for system seed')
-  }
+  restore_rng <- rdlocrand_seed_scope(seed)
+  on.exit(restore_rng(), add = TRUE)
 
   ###############################################################################
   # Window selection

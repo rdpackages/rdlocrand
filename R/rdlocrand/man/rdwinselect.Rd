@@ -75,10 +75,15 @@ rdwinselect(
 \item{obsstep}{the minimum number of observations to be added on each side of the cutoff for the sequence of fixed-increment nested windows. This option is deprecated and only included for backward compatibility.}
 }
 \value{
-\item{window}{recommended window (NA is covariates are not specified)}
-\item{wlist}{list of window lengths}
-\item{results}{table including window lengths, minimum p-value in each window, corresponding number of the variable with minimum p-value (i.e. column of covariate matrix), Binomial test p-value and sample sizes to the left and right of the cutoff in each window.}
-\item{summary}{summary statistics.}
+A list containing:
+\item{w_left}{left endpoint of the recommended window.}
+\item{w_right}{right endpoint of the recommended window.}
+\item{wlist_left}{left endpoints of the candidate windows.}
+\item{wlist_right}{right endpoints of the candidate windows.}
+\item{results}{matrix containing the minimum covariate-balance p-value,
+selected covariate index, binomial-test p-value, sample sizes below and
+above the cutoff, and window endpoints for each candidate window.}
+\item{summary}{matrix of sample-size summaries by side of the cutoff.}
 }
 \description{
 \code{rdwinselect} implements the window-selection procedure
@@ -92,16 +97,17 @@ rdwinselect(
 }
 \examples{
 # Toy dataset
+set.seed(123)
 X <- array(rnorm(200),dim=c(100,2))
-R <- X[1,] + X[2,] + rnorm(100)
+R <- X[,1] + X[,2] + rnorm(100)
 # Window selection adding 5 observations at each step
 # Note: low number of replications to speed up process.
-tmp <- rdwinselect(R,X,obsmin=10,wobs=5,reps=500)
+tmp <- rdwinselect(R,X,obsmin=10,wobs=5,reps=500,quietly=TRUE)
 # Window selection setting initial window and step
 # The user should increase the number of replications.
-tmp <- rdwinselect(R,X,wmin=.5,wstep=.125,reps=500)
+tmp <- rdwinselect(R,X,wmin=.5,wstep=.125,reps=500,quietly=TRUE)
 # Window selection with approximate (large sample) inference and p-value plot
-tmp <- rdwinselect(R,X,wmin=.5,wstep=.125,approx=TRUE,nwin=80,quietly=TRUE,plot=TRUE)
+tmp <- rdwinselect(R,X,wmin=.5,wstep=.125,approx=TRUE,nwindows=80,quietly=TRUE,plot=TRUE)
 
 
 }
@@ -109,9 +115,9 @@ tmp <- rdwinselect(R,X,wmin=.5,wstep=.125,approx=TRUE,nwin=80,quietly=TRUE,plot=
 Cattaneo, M.D., R. Titiunik and G. Vazquez-Bare. (2016). \href{https://rdpackages.github.io/references/Cattaneo-Titiunik-VazquezBare_2016_Stata.pdf}{Inference in Regression Discontinuity Designs under Local Randomization}. \emph{Stata Journal} 16(2): 331-367.
 }
 \author{
-Matias Cattaneo, Princeton University. \email{cattaneo@princeton.edu}
+Matias D. Cattaneo, Princeton University. \email{matias.d.cattaneo@gmail.com}
 
-Rocio Titiunik, Princeton University. \email{titiunik@princeton.edu}
+Rocio Titiunik, Princeton University. \email{rocio.titiunik@gmail.com}
 
-Gonzalo Vazquez-Bare, UC Santa Barbara. \email{gvazquez@econ.ucsb.edu}
+Gonzalo Vazquez-Bare, UC Santa Barbara. \email{gvazquezbare@gmail.com}
 }

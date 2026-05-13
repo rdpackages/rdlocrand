@@ -39,7 +39,7 @@ rdrbounds(
 
 \item{bound}{specifies which bounds the command calculates. Options are \code{upper} for upper bound, \code{lower} for lower bound and \code{both} for both upper and lower bounds. Default is \code{both}.}
 
-\item{statistic}{the statistic to be used in the balance tests. Allowed options are \code{diffmeans} (difference in means statistic), \code{ksmirnov} (Kolmogorov-Smirnov statistic) and \code{ranksum} (Wilcoxon-Mann-Whitney standardized statistic). Default option is \code{diffmeans}. The statistic \code{ttest} is equivalent to \code{diffmeans} and included for backward compatibility.}
+\item{statistic}{the statistic to be used in the balance tests. Allowed options are \code{diffmeans} (difference in means statistic), \code{ksmirnov} (Kolmogorov-Smirnov statistic) and \code{ranksum} (Wilcoxon-Mann-Whitney standardized statistic). Default option is \code{ranksum}. The statistic \code{ttest} is equivalent to \code{diffmeans} and included for backward compatibility.}
 
 \item{p}{the order of the polynomial for outcome adjustment model. Default is 0.}
 
@@ -60,12 +60,16 @@ rdrbounds(
 \item{seed}{the seed to be used for the randomization tests.}
 }
 \value{
-\item{gamma}{list of gamma values.}
-\item{expgamma}{list of exp(gamma) values.}
+A list containing:
+\item{gamma}{vector of gamma values.}
+\item{expgamma}{vector of exp(gamma) values.}
 \item{wlist}{window grid.}
-\item{p.values}{p-values for each window (under gamma = 0).}
-\item{lower.bound}{list of lower bound p-values for each window and gamma pair.}
-\item{upper.bound}{list of upper bound p-values for each window and gamma pair.}
+\item{p.values}{p-values for each window under gamma = 0. When
+\code{fmpval = TRUE}, this includes Bernoulli and fixed-margins p-values.}
+\item{lower.bound}{matrix of lower-bound p-values for each gamma-window pair;
+included when \code{bound = "lower"} or \code{bound = "both"}.}
+\item{upper.bound}{matrix of upper-bound p-values for each gamma-window pair;
+included when \code{bound = "upper"} or \code{bound = "both"}.}
 }
 \description{
 \code{rdrbounds} calculates lower and upper bounds for the
@@ -74,6 +78,7 @@ rdrbounds(
 }
 \examples{
 # Toy dataset
+set.seed(123)
 R <- runif(100,-1,1)
 Y <- 1 + R -.5*R^2 + .3*R^3 + (R>=0) + rnorm(100)
 # Rosenbaum bounds
@@ -89,9 +94,9 @@ Cattaneo, M.D., R. Titiunik and G. Vazquez-Bare. (2016). \href{https://rdpackage
 Rosenbaum, P. (2002). Observational Studies. Springer.
 }
 \author{
-Matias Cattaneo, Princeton University. \email{cattaneo@princeton.edu}
+Matias D. Cattaneo, Princeton University. \email{matias.d.cattaneo@gmail.com}
 
-Rocio Titiunik, Princeton University. \email{titiunik@princeton.edu}
+Rocio Titiunik, Princeton University. \email{rocio.titiunik@gmail.com}
 
-Gonzalo Vazquez-Bare, UC Santa Barbara. \email{gvazquez@econ.ucsb.edu}
+Gonzalo Vazquez-Bare, UC Santa Barbara. \email{gvazquezbare@gmail.com}
 }

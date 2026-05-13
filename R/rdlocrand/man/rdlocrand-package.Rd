@@ -16,7 +16,8 @@ testing using randomization inference, \code{\link{rdwinselect}} to select a win
 around the cutoff in which randomization is likely to hold, \code{\link{rdsensitivity}}
 to assess the sensitivity of the results to different window lengths and null hypotheses
 and \code{\link{rdrbounds}} to construct Rosenbaum bounds for sensitivity to
-unobserved confounders. For more details, and related \code{Stata} and \code{R} packages
+unobserved confounders. For more details, and related \code{R}, \code{Python},
+and \code{Stata} packages
  useful for analysis of RD designs, visit \url{https://rdpackages.github.io/}.
 }
 \references{
@@ -28,10 +29,19 @@ Cattaneo, M.D., R. Titiunik and G. Vazquez-Bare. (2017). \href{https://rdpackage
 
 Rosenbaum, P. (2002). Observational Studies. Springer.
 }
+\seealso{
+Useful links:
+\itemize{
+  \item \url{https://rdpackages.github.io/}
+  \item \url{https://github.com/rdpackages/rdlocrand}
+  \item Report bugs at \url{https://github.com/rdpackages/rdlocrand/issues}
+}
+
+}
 \author{
-Matias Cattaneo, Princeton University. \email{cattaneo@princeton.edu}
+Matias D. Cattaneo, Princeton University. \email{matias.d.cattaneo@gmail.com}
 
-Rocio Titiunik, Princeton University. \email{titiunik@princeton.edu}
+Rocio Titiunik, Princeton University. \email{rocio.titiunik@gmail.com}
 
-Gonzalo Vazquez-Bare, UC Santa Barbara. \email{gvazquez@econ.ucsb.edu}
+Gonzalo Vazquez-Bare, UC Santa Barbara. \email{gvazquezbare@gmail.com}
 }

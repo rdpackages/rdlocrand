@@ -31,9 +31,9 @@ rdsensitivity(
 
 \item{cutoff}{the RD cutoff (default is 0).}
 
-\item{wlist}{the list of windows to the right of the cutoff. By default the program constructs 10 windows around the cutoffwith 5 observations each.}
+\item{wlist}{the list of windows to the right of the cutoff. By default the program constructs 10 windows around the cutoff with 5 observations each.}
 
-\item{wlist_left}{the list of windows  to the left of the cutoff. If not specified, the windows are constructed symmetrically around the cutoff based on the values in wlist.}
+\item{wlist_left}{the list of windows to the left of the cutoff. If not specified, the windows are constructed symmetrically around the cutoff based on the values in wlist.}
 
 \item{tlist}{the list of values of the treatment effect under the null to be evaluated. By default the program employs ten evenly spaced points within the asymptotic confidence interval for a constant treatment effect in the smallest window to be used.}
 
@@ -60,10 +60,12 @@ rdsensitivity(
 \item{quietly}{suppresses the output table.}
 }
 \value{
-\item{tlist}{treatment effects grid}
-\item{wlist}{window grid}
-\item{results}{table with corresponding p-values for each window and treatment effect pair.}
-\item{ci}{confidence interval (if \code{ci} is specified).}
+A list containing:
+\item{tlist}{treatment-effect grid.}
+\item{wlist}{right endpoints of the window grid.}
+\item{wlist_left}{left endpoints of the window grid.}
+\item{results}{matrix of p-values for each treatment-effect and window pair.}
+\item{ci}{confidence interval; included only when \code{ci} is specified.}
 }
 \description{
 \code{rdsensitivity} analyze the sensitivity of randomization p-values
@@ -71,12 +73,14 @@ and confidence intervals to different window lengths.
 }
 \examples{
 # Toy dataset
+set.seed(123)
 R <- runif(100,-1,1)
 Y <- 1 + R -.5*R^2 + .3*R^3 + (R>=0) + rnorm(100)
 # Sensitivity analysis
 # Note: low number of replications to speed up process.
 # The user should increase the number of replications.
-tmp <- rdsensitivity(Y,R,wlist=seq(.75,2,by=.25),tlist=seq(0,5,by=1),reps=500)
+tmp <- rdsensitivity(Y,R,wlist=seq(.75,2,by=.25),tlist=seq(0,5,by=1),
+                     reps=500,nodraw=TRUE,quietly=TRUE)
 
 
 }
@@ -84,9 +88,9 @@ tmp <- rdsensitivity(Y,R,wlist=seq(.75,2,by=.25),tlist=seq(0,5,by=1),reps=500)
 Cattaneo, M.D., R. Titiunik and G. Vazquez-Bare. (2016). \href{https://rdpackages.github.io/references/Cattaneo-Titiunik-VazquezBare_2016_Stata.pdf}{Inference in Regression Discontinuity Designs under Local Randomization}. \emph{Stata Journal} 16(2): 331-367.
 }
 \author{
-Matias Cattaneo, Princeton University. \email{cattaneo@princeton.edu}
+Matias D. Cattaneo, Princeton University. \email{matias.d.cattaneo@gmail.com}
 
-Rocio Titiunik, Princeton University. \email{titiunik@princeton.edu}
+Rocio Titiunik, Princeton University. \email{rocio.titiunik@gmail.com}
 
-Gonzalo Vazquez-Bare, UC Santa Barbara. \email{gvazquez@econ.ucsb.edu}
+Gonzalo Vazquez-Bare, UC Santa Barbara. \email{gvazquezbare@gmail.com}
 }

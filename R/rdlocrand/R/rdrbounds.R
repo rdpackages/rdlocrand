@@ -11,11 +11,11 @@
 #'  local randomized experiment, as suggested by Rosenbaum (2002).
 #'
 #' @author
-#' Matias Cattaneo, Princeton University. \email{cattaneo@princeton.edu}
+#' Matias D. Cattaneo, Princeton University. \email{matias.d.cattaneo@gmail.com}
 #'
-#' Rocio Titiunik, Princeton University. \email{titiunik@princeton.edu}
+#' Rocio Titiunik, Princeton University. \email{rocio.titiunik@gmail.com}
 #'
-#' Gonzalo Vazquez-Bare, UC Santa Barbara. \email{gvazquez@econ.ucsb.edu}
+#' Gonzalo Vazquez-Bare, UC Santa Barbara. \email{gvazquezbare@gmail.com}
 #'
 #' @references
 #'
@@ -31,7 +31,7 @@
 #' @param gamma the list of values of gamma to be evaluated.
 #' @param expgamma the list of values of exp(gamma) to be evaluated. Default is \code{c(1.5,2,2.5,3)}.
 #' @param bound specifies which bounds the command calculates. Options are \code{upper} for upper bound, \code{lower} for lower bound and \code{both} for both upper and lower bounds. Default is \code{both}.
-#' @param statistic the statistic to be used in the balance tests. Allowed options are \code{diffmeans} (difference in means statistic), \code{ksmirnov} (Kolmogorov-Smirnov statistic) and \code{ranksum} (Wilcoxon-Mann-Whitney standardized statistic). Default option is \code{diffmeans}. The statistic \code{ttest} is equivalent to \code{diffmeans} and included for backward compatibility.
+#' @param statistic the statistic to be used in the balance tests. Allowed options are \code{diffmeans} (difference in means statistic), \code{ksmirnov} (Kolmogorov-Smirnov statistic) and \code{ranksum} (Wilcoxon-Mann-Whitney standardized statistic). Default option is \code{ranksum}. The statistic \code{ttest} is equivalent to \code{diffmeans} and included for backward compatibility.
 #' @param p the order of the polynomial for outcome adjustment model. Default is 0.
 #' @param evalat specifies the point at which the adjusted variable is evaluated. Allowed options are \code{cutoff} and \code{means}. Default is \code{cutoff}.
 #' @param kernel specifies the type of kernel to use as weighting scheme. Allowed kernel types are \code{uniform} (uniform kernel), \code{triangular} (triangular kernel) and \code{epan} (Epanechnikov kernel). Default is \code{uniform}.
@@ -43,15 +43,20 @@
 #' @param seed the seed to be used for the randomization tests.
 #'
 #' @return
-#' \item{gamma}{list of gamma values.}
-#' \item{expgamma}{list of exp(gamma) values.}
+#' A list containing:
+#' \item{gamma}{vector of gamma values.}
+#' \item{expgamma}{vector of exp(gamma) values.}
 #' \item{wlist}{window grid.}
-#' \item{p.values}{p-values for each window (under gamma = 0).}
-#' \item{lower.bound}{list of lower bound p-values for each window and gamma pair.}
-#' \item{upper.bound}{list of upper bound p-values for each window and gamma pair.}
+#' \item{p.values}{p-values for each window under gamma = 0. When
+#' \code{fmpval = TRUE}, this includes Bernoulli and fixed-margins p-values.}
+#' \item{lower.bound}{matrix of lower-bound p-values for each gamma-window pair;
+#' included when \code{bound = "lower"} or \code{bound = "both"}.}
+#' \item{upper.bound}{matrix of upper-bound p-values for each gamma-window pair;
+#' included when \code{bound = "upper"} or \code{bound = "both"}.}
 #'
 #' @examples
 #' # Toy dataset
+#' set.seed(123)
 #' R <- runif(100,-1,1)
 #' Y <- 1 + R -.5*R^2 + .3*R^3 + (R>=0) + rnorm(100)
 #' # Rosenbaum bounds
@@ -86,7 +91,18 @@ rdrbounds = function(Y,R,
   ###############################################################################
 
   if (cutoff<=min(R,na.rm=TRUE) | cutoff>=max(R,na.rm=TRUE)) stop('Cutoff must be within the range of the running variable')
-  if (bound!='both' & bound!='upper' & bound!='lower') stop('bound option incorrectly specified')
+  rdlocrand_validate_choice(bound, c('both','upper','lower'), 'bound option incorrectly specified')
+  rdlocrand_validate_choice(
+    statistic,
+    c('diffmeans','ttest','ksmirnov','ranksum'),
+    paste(paste(statistic, collapse = ', '),'not a valid statistic')
+  )
+  rdlocrand_validate_choice(evalat, c('cutoff','means'), 'evalat only admits means or cutoff')
+  rdlocrand_validate_choice(
+    kernel,
+    c('uniform','triangular','epan'),
+    paste(paste(kernel, collapse = ', '),'not a valid kernel')
+  )
 
   data <- cbind(Y,R)
   data <- data[complete.cases(data),]
@@ -114,14 +130,12 @@ rdrbounds = function(Y,R,
     wlist <- round(aux$results[,1],2)
   }
 
-  if (seed>0){
-    set.seed(seed)
-  } else if (seed!=-1){
-    stop('Seed has to be a positive integer or -1 for system seed')
-  }
+  restore_rng <- rdlocrand_seed_scope(seed)
+  on.exit(restore_rng(), add = TRUE)
 
   evall <- cutoff
   evalr <- cutoff
+  fast.ranksum <- statistic=='ranksum' & p==0 & kernel=='uniform' & is.null(fuzzy)
 
 
   ###############################################################################
@@ -147,11 +161,16 @@ rdrbounds = function(Y,R,
         evall <- mean(Rw[Dw==0])
         evalr <- mean(Rw[Dw==1])
       }
-      aux <- rdrandinf(Y,Rc,wl=-w,wr=w,bernoulli=prob.be,reps=reps,p=p,
-                      nulltau=nulltau,statistic=statistic,
-                      evall=evall,evalr=evalr,kernel=kernel,fuzzy=fuzzy,
-                      quietly=TRUE)
-      P[1,count] <- aux$p.value
+      if (fast.ranksum & missing(prob)){
+        P[1,count] <- rdrandinf.bernoulli.ranksum.pvalue(Y[ww],Rw,rep(mean(Dw),length(Rw)),
+                                                          reps=reps,nulltau=nulltau)
+      } else {
+        aux <- rdrandinf(Y,Rc,wl=-w,wr=w,bernoulli=prob.be,reps=reps,p=p,
+                        nulltau=nulltau,statistic=statistic,
+                        evall=evall,evalr=evalr,kernel=kernel,fuzzy=fuzzy,
+                        quietly=TRUE)
+        P[1,count] <- aux$p.value
+      }
 
       cat(paste0('\nBernoulli p-value (w = ',w,') = ',round(P[1,count],3)))
 
@@ -171,11 +190,16 @@ rdrbounds = function(Y,R,
         evall <- mean(Rw[Dw==0])
         evalr <- mean(Rw[Dw==1])
       }
-      aux.be <- rdrandinf(Y,Rc,wl=-w,wr=w,bernoulli=prob.be,reps=reps,p=p,
-                         nulltau=nulltau,statistic=statistic,
-                         evall=evall,evalr=evalr,kernel=kernel,fuzzy=fuzzy,
-                         quietly=TRUE)
-      P[1,count] <- aux.be$p.value
+      if (fast.ranksum & missing(prob)){
+        P[1,count] <- rdrandinf.bernoulli.ranksum.pvalue(Y[ww],Rw,rep(mean(Dw),length(Rw)),
+                                                          reps=reps,nulltau=nulltau)
+      } else {
+        aux.be <- rdrandinf(Y,Rc,wl=-w,wr=w,bernoulli=prob.be,reps=reps,p=p,
+                           nulltau=nulltau,statistic=statistic,
+                           evall=evall,evalr=evalr,kernel=kernel,fuzzy=fuzzy,
+                           quietly=TRUE)
+        P[1,count] <- aux.be$p.value
+      }
 
       aux.fm <- rdrandinf(Y,Rc,wl=-w,wr=w,reps=reps,p=p,
                          nulltau=nulltau,statistic=statistic,
@@ -229,21 +253,26 @@ rdrbounds = function(Y,R,
         nw <- length(Rw)
         nw1 <- sum(Dw)
         nw0 <- nw - nw1
-        pvals.ub <- NULL
+        pvals.ub <- vector("list", nw)
 
         for (u in seq(1,nw)){
 
           uplus <- c(rep(1,u),rep(0,nw-u))
           p.aux <- phigh*uplus + plow*(1-uplus)
-          aux <- rdrandinf(Yw.dec,Rw.dec,wl=-w,wr=w,bernoulli=p.aux,reps=reps,p=p,
-                          nulltau=nulltau,statistic=statistic,
-                          evall=evall,evalr=evalr,kernel=kernel,fuzzy=fuzzy,
-                          quietly=TRUE)
-          pvals.ub <- c(pvals.ub,aux$p.value)
+          if (fast.ranksum){
+            pvals.ub[[u]] <- rdrandinf.bernoulli.ranksum.pvalue(Yw.dec,Rw.dec,p.aux,
+                                                                 reps=reps,nulltau=nulltau)
+          } else {
+            aux <- rdrandinf(Yw.dec,Rw.dec,wl=-w,wr=w,bernoulli=p.aux,reps=reps,p=p,
+                            nulltau=nulltau,statistic=statistic,
+                            evall=evall,evalr=evalr,kernel=kernel,fuzzy=fuzzy,
+                            quietly=TRUE)
+            pvals.ub[[u]] <- aux$p.value
+          }
 
         }
 
-        p.ub.w <- max(pvals.ub)
+        p.ub.w <- max(unlist(pvals.ub, use.names = FALSE))
         p.ub[count.g,count.w] <- p.ub.w
 
         count.w <- count.w + 1
@@ -287,30 +316,40 @@ rdrbounds = function(Y,R,
         nw <- length(Rw)
         nw1 <- sum(Dw)
         nw0 <- nw - nw1
-        pvals.ub <- NULL
-        pvals.lb <- NULL
+        pvals.ub <- vector("list", nw)
+        pvals.lb <- vector("list", nw)
 
         for (u in seq(1,nw)){
 
           uplus <- c(rep(1,u),rep(0,nw-u))
           p.aux <- phigh*uplus + plow*(1-uplus)
-          aux <- rdrandinf(Yw.dec,Rw.dec,wl=-w,wr=w,bernoulli=p.aux,reps=reps,p=p,
-                          nulltau=nulltau,statistic=statistic,
-                          evall=evall,evalr=evalr,kernel=kernel,fuzzy=fuzzy,
-                          quietly=TRUE)
-          pvals.ub <- c(pvals.ub,aux$p.value)
+          if (fast.ranksum){
+            pvals.ub[[u]] <- rdrandinf.bernoulli.ranksum.pvalue(Yw.dec,Rw.dec,p.aux,
+                                                                 reps=reps,nulltau=nulltau)
+          } else {
+            aux <- rdrandinf(Yw.dec,Rw.dec,wl=-w,wr=w,bernoulli=p.aux,reps=reps,p=p,
+                            nulltau=nulltau,statistic=statistic,
+                            evall=evall,evalr=evalr,kernel=kernel,fuzzy=fuzzy,
+                            quietly=TRUE)
+            pvals.ub[[u]] <- aux$p.value
+          }
           uminus <- c(rep(0,nw-u),rep(1,u))
           p.aux <- phigh*uminus + plow*(1-uminus)
-          aux <- rdrandinf(Yw.inc,Rw.inc,wl=-w,wr=w,bernoulli=p.aux,reps=reps,p=p,
-                          nulltau=nulltau,statistic=statistic,
-                          evall=evall,evalr=evalr,kernel=kernel,fuzzy=fuzzy,
-                          quietly=TRUE)
-          pvals.lb <- c(pvals.lb,aux$p.value)
+          if (fast.ranksum){
+            pvals.lb[[u]] <- rdrandinf.bernoulli.ranksum.pvalue(Yw.inc,Rw.inc,p.aux,
+                                                                 reps=reps,nulltau=nulltau)
+          } else {
+            aux <- rdrandinf(Yw.inc,Rw.inc,wl=-w,wr=w,bernoulli=p.aux,reps=reps,p=p,
+                            nulltau=nulltau,statistic=statistic,
+                            evall=evall,evalr=evalr,kernel=kernel,fuzzy=fuzzy,
+                            quietly=TRUE)
+            pvals.lb[[u]] <- aux$p.value
+          }
 
         }
 
-        p.ub.w <- max(pvals.ub)
-        p.lb.w <- min(pvals.lb)
+        p.ub.w <- max(unlist(pvals.ub, use.names = FALSE))
+        p.lb.w <- min(unlist(pvals.lb, use.names = FALSE))
         p.ub[count.g,count.w] <- p.ub.w
         p.lb[count.g,count.w] <- p.lb.w
 
@@ -350,22 +389,26 @@ rdrbounds = function(Y,R,
         nw <- length(Rw)
         nw1 <- sum(Dw)
         nw0 <- nw - nw1
-        pvals.ub <- NULL
-        pvals.lb <- NULL
+        pvals.lb <- vector("list", nw)
 
         for (u in seq(1,nw)){
 
           uminus <- c(rep(0,nw-u),rep(1,u))
           p.aux <- phigh*uminus + plow*(1-uminus)
-          aux <- rdrandinf(Yw.inc,Rw.inc,wl=-w,wr=w,bernoulli=p.aux,reps=reps,p=p,
-                          nulltau=nulltau,statistic=statistic,
-                          evall=evall,evalr=evalr,kernel=kernel,fuzzy=fuzzy,
-                          quietly=TRUE)
-          pvals.lb <- c(pvals.lb,aux$p.value)
+          if (fast.ranksum){
+            pvals.lb[[u]] <- rdrandinf.bernoulli.ranksum.pvalue(Yw.inc,Rw.inc,p.aux,
+                                                                 reps=reps,nulltau=nulltau)
+          } else {
+            aux <- rdrandinf(Yw.inc,Rw.inc,wl=-w,wr=w,bernoulli=p.aux,reps=reps,p=p,
+                            nulltau=nulltau,statistic=statistic,
+                            evall=evall,evalr=evalr,kernel=kernel,fuzzy=fuzzy,
+                            quietly=TRUE)
+            pvals.lb[[u]] <- aux$p.value
+          }
 
         }
 
-        p.lb.w <- min(pvals.lb)
+        p.lb.w <- min(unlist(pvals.lb, use.names = FALSE))
         p.lb[count.g,count.w] <- p.lb.w
 
         count.w <- count.w + 1

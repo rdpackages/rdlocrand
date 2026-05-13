@@ -16,11 +16,11 @@
 #'  the p-values are calculated using randomization inference methods.
 #'
 #' @author
-#' Matias Cattaneo, Princeton University. \email{cattaneo@princeton.edu}
+#' Matias D. Cattaneo, Princeton University. \email{matias.d.cattaneo@gmail.com}
 #'
-#' Rocio Titiunik, Princeton University. \email{titiunik@princeton.edu}
+#' Rocio Titiunik, Princeton University. \email{rocio.titiunik@gmail.com}
 #'
-#' Gonzalo Vazquez-Bare, UC Santa Barbara. \email{gvazquez@econ.ucsb.edu}
+#' Gonzalo Vazquez-Bare, UC Santa Barbara. \email{gvazquezbare@gmail.com}
 #'
 #' @references
 #'
@@ -52,23 +52,29 @@
 #' @param obsstep the minimum number of observations to be added on each side of the cutoff for the sequence of fixed-increment nested windows. This option is deprecated and only included for backward compatibility.
 #'
 #' @return
-#' \item{window}{recommended window (NA is covariates are not specified)}
-#' \item{wlist}{list of window lengths}
-#' \item{results}{table including window lengths, minimum p-value in each window, corresponding number of the variable with minimum p-value (i.e. column of covariate matrix), Binomial test p-value and sample sizes to the left and right of the cutoff in each window.}
-#' \item{summary}{summary statistics.}
+#' A list containing:
+#' \item{w_left}{left endpoint of the recommended window.}
+#' \item{w_right}{right endpoint of the recommended window.}
+#' \item{wlist_left}{left endpoints of the candidate windows.}
+#' \item{wlist_right}{right endpoints of the candidate windows.}
+#' \item{results}{matrix containing the minimum covariate-balance p-value,
+#' selected covariate index, binomial-test p-value, sample sizes below and
+#' above the cutoff, and window endpoints for each candidate window.}
+#' \item{summary}{matrix of sample-size summaries by side of the cutoff.}
 #'
 #' @examples
 #' # Toy dataset
+#' set.seed(123)
 #' X <- array(rnorm(200),dim=c(100,2))
-#' R <- X[1,] + X[2,] + rnorm(100)
+#' R <- X[,1] + X[,2] + rnorm(100)
 #' # Window selection adding 5 observations at each step
 #' # Note: low number of replications to speed up process.
-#' tmp <- rdwinselect(R,X,obsmin=10,wobs=5,reps=500)
+#' tmp <- rdwinselect(R,X,obsmin=10,wobs=5,reps=500,quietly=TRUE)
 #' # Window selection setting initial window and step
 #' # The user should increase the number of replications.
-#' tmp <- rdwinselect(R,X,wmin=.5,wstep=.125,reps=500)
+#' tmp <- rdwinselect(R,X,wmin=.5,wstep=.125,reps=500,quietly=TRUE)
 #' # Window selection with approximate (large sample) inference and p-value plot
-#' tmp <- rdwinselect(R,X,wmin=.5,wstep=.125,approx=TRUE,nwin=80,quietly=TRUE,plot=TRUE)
+#' tmp <- rdwinselect(R,X,wmin=.5,wstep=.125,approx=TRUE,nwindows=80,quietly=TRUE,plot=TRUE)
 #'
 #'
 #' @export
@@ -104,9 +110,17 @@ rdwinselect <- function(R, X,
   if (cutoff<=min(R,na.rm=TRUE) | cutoff>=max(R,na.rm=TRUE)) stop('Cutoff must be within the range of the running variable')
   if (p<0) stop('p must be a positive integer')
   if (p>0 & approx==TRUE & statistic!='ttest' & statistic!='diffmeans') stop('approximate and p>1 can only be combined with diffmeans')
-  if (statistic!='diffmeans' & statistic!='ttest' & statistic!='ksmirnov' & statistic!='ranksum' & statistic!='hotelling') stop(paste(statistic,'not a valid statistic'))
-  if (evalat!='cutoff' & evalat!='means') stop('evalat only admits means or cutoff')
-  if (kernel!='uniform' & kernel!='triangular' & kernel!='epan') stop(paste(kernel,'not a valid kernel'))
+  rdlocrand_validate_choice(
+    statistic,
+    c('diffmeans','ttest','ksmirnov','ranksum','hotelling'),
+    paste(paste(statistic, collapse = ', '),'not a valid statistic')
+  )
+  rdlocrand_validate_choice(evalat, c('cutoff','means'), 'evalat only admits means or cutoff')
+  rdlocrand_validate_choice(
+    kernel,
+    c('uniform','triangular','epan'),
+    paste(paste(kernel, collapse = ', '),'not a valid kernel')
+  )
   if (kernel!='uniform' & evalat!='cutoff') stop('kernel can only be combined with evalat(cutoff)')
   if (kernel!='uniform' & statistic!='ttest' & statistic!='diffmeans') stop('kernel only allowed for diffmeans')
   if (!is.null(obsmin) & !is.null(wmin)) stop('cannot set both obsmin and wmin')
@@ -147,12 +161,12 @@ rdwinselect <- function(R, X,
     D <- data[,2]
   }
 
-  if (!missing(X)){X <- as.matrix(X)}
-  if (seed>0){
-    set.seed(seed)
-  } else if (seed!=-1){
-    stop('Seed has to be a positive integer or -1 for system seed')
+  if (!missing(X)){
+    X <- as.matrix(X)
+    covariate_complete <- complete.cases(X)
   }
+  restore_rng <- rdlocrand_seed_scope(seed)
+  on.exit(restore_rng(), add = TRUE)
 
   if (approx==FALSE){testing_method='rdrandinf'}else{testing_method='approximate'}
 
@@ -388,23 +402,14 @@ rdwinselect <- function(R, X,
 
     }
 
-    Dw <- D[ww]
-    Rw <- Rc[ww]
-
-    ## Drop NA values
-
     if (!missing(X)){
-      Xw <- X[ww,]
-      data <- data.frame(Rw,Dw,Xw)
-      data <- data[complete.cases(data),]
-      Rw <- data[,1]
-      Dw <- data[,2]
-      Xw <- data[,c(-1,-2)]
+      ww <- ww & covariate_complete
+      Dw <- D[ww]
+      Rw <- Rc[ww]
+      Xw <- X[ww,,drop=FALSE]
     } else {
-      data <- cbind(Rw,Dw)
-      data <- data[complete.cases(data),]
-      Rw <- data[,1]
-      Dw <- data[,2]
+      Dw <- D[ww]
+      Rw <- Rc[ww]
     }
 
     ## Sample sizes

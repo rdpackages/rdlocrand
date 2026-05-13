@@ -1,0 +1,38 @@
+#!/bin/sh
+
+set -eu
+
+if [ "${RDLOCRAND_SKIP_PRE_PUSH:-}" = "1" ]; then
+  echo "Skipping rdlocrand pre-push checks because RDLOCRAND_SKIP_PRE_PUSH=1."
+  exit 0
+fi
+
+if [ "${OS:-}" = "Windows_NT" ]; then
+  unset LC_ALL
+  unset LC_CTYPE
+fi
+
+RSCRIPT_BIN="${RSCRIPT:-Rscript}"
+if ! command -v "$RSCRIPT_BIN" >/dev/null 2>&1; then
+  if [ -x "/c/Program Files/R/R-4.6.0/bin/Rscript.exe" ]; then
+    RSCRIPT_BIN="/c/Program Files/R/R-4.6.0/bin/Rscript.exe"
+  else
+    echo "Rscript was not found. Set RSCRIPT=/path/to/Rscript or install R on PATH." >&2
+    exit 1
+  fi
+fi
+
+if [ -n "${PYTHON:-}" ]; then
+  PYTHON_BIN="$PYTHON"
+elif command -v python3 >/dev/null 2>&1; then
+  PYTHON_BIN="python3"
+elif command -v python >/dev/null 2>&1; then
+  PYTHON_BIN="python"
+else
+  echo "Python was not found. Set PYTHON=/path/to/python or install Python on PATH." >&2
+  exit 1
+fi
+
+"$RSCRIPT_BIN" scripts/check-local.R --pre-push
+"$PYTHON_BIN" scripts/check-python.py --syntax-only
+"$PYTHON_BIN" scripts/check-stata-package.py

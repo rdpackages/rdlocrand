@@ -7,14 +7,19 @@
 rm(list = ls())
 options(width=200)
 
-#install.packages("rdlocrand")
+# install.packages("rdlocrand")
 library(rdlocrand)
 
 ###############################################################################
 ## Load data
 ###############################################################################
 
-data <- read.csv("rdlocrand_senate.csv")
+data_candidates <- c("rdlocrand_senate.csv",
+                     file.path("R","rdlocrand_senate.csv"),
+                     file.path("..","rdlocrand_senate.csv"))
+data_file <- data_candidates[file.exists(data_candidates)][1]
+if (is.na(data_file)) stop("Could not find rdlocrand_senate.csv")
+data <- read.csv(data_file)
 dim(data)
 names(data)
 
@@ -70,7 +75,7 @@ tmp <- rdwinselect(R,X,wmin=.5,wstep=.125,reps=10000)
 
 # Window selection using large sample approximation and plotting p-values
 
-tmp <- rdwinselect(R,X,wmin=.5,wstep=.125,approx=TRUE,nwin=80,quietly=TRUE,plot=TRUE)
+tmp <- rdwinselect(R,X,wmin=.5,wstep=.125,approx=TRUE,nwindows=80,quietly=TRUE,plot=TRUE)
 
 
 ###############################################################################
