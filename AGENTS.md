@@ -64,6 +64,8 @@ From the repository root:
 
 ```sh
 R CMD check --no-manual R/rdlocrand
+python scripts/check-all.py --quick
+python scripts/check-all.py
 Rscript scripts/check-r-replication-baseline.R
 Rscript scripts/profile-r-hotpaths.R --quick
 python scripts/check-python.py --syntax-only

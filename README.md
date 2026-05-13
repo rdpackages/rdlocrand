@@ -39,7 +39,7 @@ net install rdlocrand, from(https://raw.githubusercontent.com/rdpackages/rdlocra
 
 ## References
 
-For overviews and introductions, see [rdpackages website](https://rdpackages.github.io).
+For overviews and introductions, see [rdpackages website](https://rdpackages.github.io). Source code is available at [https://github.com/rdpackages/rdlocrand](https://github.com/rdpackages/rdlocrand).
 
 ### Software and Implementation
 

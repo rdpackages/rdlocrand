@@ -33,6 +33,7 @@ else
   exit 1
 fi
 
+"$PYTHON_BIN" scripts/check-repo-metadata.py
 "$RSCRIPT_BIN" scripts/check-local.R --pre-push
 "$PYTHON_BIN" scripts/check-python.py --syntax-only
-"$PYTHON_BIN" scripts/check-stata-package.py
+"$PYTHON_BIN" scripts/check-stata-package.py --strict-unlisted

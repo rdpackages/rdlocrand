@@ -13,6 +13,18 @@ shared documentation when behavior changes across implementations.
 
 ## Local Checks
 
+For the standard cross-package local validation gate:
+
+```sh
+python scripts/check-all.py
+```
+
+For the faster pre-push/static subset:
+
+```sh
+python scripts/check-all.py --quick
+```
+
 For R package checks from the repository root:
 
 ```sh

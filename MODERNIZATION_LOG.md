@@ -218,3 +218,9 @@ maintainer explicitly approves a substantive change.
   repository lines to `stata/rdlocrand.pkg` and `stata/stata.toc`, extending the
   static package checker to enforce those package-level URLs, and updating the
   illustration do-file to use a temporary dataset for contour-plot replication.
+- Added repository-level release hardening: a metadata checker for canonical
+  URLs, author order, emails, and Ricardo's Python-only authorship; a
+  cross-package `scripts/check-all.py` validation driver; a dedicated
+  repository metadata workflow; stricter Stata CI; Python CI build coverage;
+  `twine check` validation for built Python distributions; and Python
+  3.13/3.14 classifiers and CI entries.

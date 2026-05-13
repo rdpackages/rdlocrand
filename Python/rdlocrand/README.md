@@ -8,7 +8,7 @@ The regression discontinuity (RD) design is a popular quasi-experimental design 
 - `rdsensitivity` to assess the sensitivity of the results to different window lengths and null hypotheses.
 - `rdrbounds` to construct Rosenbaum bounds for sensitivity to unobserved confounders.
 
-For more details, and related R, Python, and Stata packages useful for the analysis of RD designs, visit [https://rdpackages.github.io/](https://rdpackages.github.io/).
+For more details, and related R, Python, and Stata packages useful for the analysis of RD designs, visit [https://rdpackages.github.io/](https://rdpackages.github.io/). Source code is available at [https://github.com/rdpackages/rdlocrand](https://github.com/rdpackages/rdlocrand).
 
 ## Authors
 Matias D. Cattaneo, Princeton University. Email: matias.d.cattaneo@gmail.com
