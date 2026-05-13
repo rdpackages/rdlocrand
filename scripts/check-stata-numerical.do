@@ -162,6 +162,26 @@ assert_matrix_dims RS_CI RS_CI 1 2
 assert_matrix_value RS_CI RS_CI 1 1 4
 assert_matrix_value RS_CI RS_CI 1 2 13
 
+quietly rdsensitivity demvoteshfor2 demmv, statistic(ranksum) wlist(.75 1) tlist(0(5)10) reps(19) seed(12345) nodots nodraw
+matrix RSR_results = r(results)
+assert_matrix_dims RSR_results RSR_results 3 2
+assert_matrix_value RSR_results RSR_results 1 1 0
+assert_matrix_value RSR_results RSR_results 1 2 0
+assert_matrix_value RSR_results RSR_results 2 1 .1052631578947368
+assert_matrix_value RSR_results RSR_results 2 2 0
+assert_matrix_value RSR_results RSR_results 3 1 .631578947368421
+assert_matrix_value RSR_results RSR_results 3 2 .631578947368421
+
+quietly rdsensitivity demvoteshfor2 demmv, statistic(ksmirnov) wlist(.75 1) tlist(0(5)10) reps(19) seed(12345) nodots nodraw
+matrix RSK_results = r(results)
+assert_matrix_dims RSK_results RSK_results 3 2
+assert_matrix_value RSK_results RSK_results 1 1 0
+assert_matrix_value RSK_results RSK_results 1 2 0
+assert_matrix_value RSK_results RSK_results 2 1 .4210526315789473
+assert_matrix_value RSK_results RSK_results 2 2 .3157894736842105
+assert_matrix_value RSK_results RSK_results 3 1 .3157894736842105
+assert_matrix_value RSK_results RSK_results 3 2 .2105263157894737
+
 quietly rdrbounds demvoteshfor2 demmv, expgamma(1.5 2) wlist(.5 .75) reps(19) seed(12345)
 matrix RB_lbound = r(lbound)
 matrix RB_ubound = r(ubound)
@@ -179,6 +199,42 @@ assert_matrix_value RB_ubound RB_ubound 2 2 .1578947368421053
 assert_matrix_dims RB_pvals RB_pvals 1 2
 assert_matrix_value RB_pvals RB_pvals 1 1 0
 assert_matrix_value RB_pvals RB_pvals 1 2 0
+
+quietly rdrbounds demvoteshfor2 demmv, expgamma(1.5) wlist(.5 .75) reps(19) seed(12345) bound(upper)
+matrix RBU_ubound = r(ubound)
+matrix RBU_pvals = r(pvals)
+assert_matrix_dims RBU_ubound RBU_ubound 1 2
+assert_matrix_value RBU_ubound RBU_ubound 1 1 .0526315789473684
+assert_matrix_value RBU_ubound RBU_ubound 1 2 0
+assert_matrix_dims RBU_pvals RBU_pvals 1 2
+assert_matrix_value RBU_pvals RBU_pvals 1 1 0
+assert_matrix_value RBU_pvals RBU_pvals 1 2 0
+
+quietly rdrbounds demvoteshfor2 demmv, expgamma(1.5) wlist(.5 .75) reps(19) seed(12345) bound(lower)
+matrix RBL_lbound = r(lbound)
+matrix RBL_pvals = r(pvals)
+assert_matrix_dims RBL_lbound RBL_lbound 1 2
+assert_matrix_value RBL_lbound RBL_lbound 1 1 0
+assert_matrix_value RBL_lbound RBL_lbound 1 2 0
+assert_matrix_dims RBL_pvals RBL_pvals 1 2
+assert_matrix_value RBL_pvals RBL_pvals 1 1 0
+assert_matrix_value RBL_pvals RBL_pvals 1 2 0
+
+quietly rdrbounds demvoteshfor2 demmv, expgamma(1.5) wlist(.5 .75) reps(19) seed(12345) fmpval
+matrix RBF_lbound = r(lbound)
+matrix RBF_ubound = r(ubound)
+matrix RBF_pvals = r(pvals)
+assert_matrix_dims RBF_lbound RBF_lbound 1 2
+assert_matrix_value RBF_lbound RBF_lbound 1 1 0
+assert_matrix_value RBF_lbound RBF_lbound 1 2 0
+assert_matrix_dims RBF_ubound RBF_ubound 1 2
+assert_matrix_value RBF_ubound RBF_ubound 1 1 .0526315789473684
+assert_matrix_value RBF_ubound RBF_ubound 1 2 0
+assert_matrix_dims RBF_pvals RBF_pvals 2 2
+assert_matrix_value RBF_pvals RBF_pvals 1 1 0
+assert_matrix_value RBF_pvals RBF_pvals 1 2 0
+assert_matrix_value RBF_pvals RBF_pvals 2 1 0
+assert_matrix_value RBF_pvals RBF_pvals 2 2 0
 
 display as text "Stata numerical baseline checks passed."
 log close

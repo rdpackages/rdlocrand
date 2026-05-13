@@ -189,6 +189,10 @@ maintainer explicitly approves a substantive change.
 - After the fast path, the full StataNow 19 profiling workload reduced
   `rdrbounds_both` from about 31.75 seconds to about 0.79 seconds, with the
   fixed-seed Stata numerical baseline unchanged.
+- Expanded the Stata numerical baseline to cover non-default
+  `rdsensitivity` rank-sum and Kolmogorov-Smirnov paths, plus `rdrbounds`
+  `bound(upper)`, `bound(lower)`, and `fmpval` branches before further Stata
+  refactoring.
 - Validation after the Stata help/static-check/runtime/numerical pass:
   `python scripts/check-stata-package.py --strict-unlisted`,
   `python scripts/check-stata-runtime.py`, and
