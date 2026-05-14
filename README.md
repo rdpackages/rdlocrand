@@ -29,7 +29,7 @@ install.packages('rdlocrand')
 
 To install/update in Stata type:
 ```
-net install rdlocrand, from(https://raw.githubusercontent.com/rdpackages/rdlocrand/master/stata) replace
+net install rdlocrand, from(https://raw.githubusercontent.com/rdpackages/rdlocrand/main/stata) replace
 ```
 
 - Help: [rdrandinf](stata/rdrandinf.pdf), [rdwinselect](stata/rdwinselect.pdf), [rdsensitivity](stata/rdsensitivity.pdf), [rdrbounds](stata/rdrbounds.pdf).

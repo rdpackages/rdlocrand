@@ -6,7 +6,7 @@
 ** Website: https://rdpackages.github.io/
 ** Repository: https://github.com/rdpackages/rdlocrand
 ********************************************************************************
-* net install rdlocrand, from(https://raw.githubusercontent.com/rdpackages/rdlocrand/master/stata) replace
+* net install rdlocrand, from(https://raw.githubusercontent.com/rdpackages/rdlocrand/main/stata) replace
 ********************************************************************************
 
 use rdlocrand_senate.dta, clear

@@ -228,3 +228,12 @@ maintainer explicitly approves a substantive change.
   release and updated Stata package/update dates to 2026-05-13. Updated the
   Python build helper to clear stale generated build artifacts before creating
   source and wheel distributions.
+- Prepared the repository for the default-branch migration from `master` to
+  `main`: updated Stata raw-install instructions, restricted CI triggers to
+  `main`, added repository security/dependabot configuration, removed the
+  redundant Python release checklist in favor of `CONTRIBUTING.md`, and
+  tightened ignore rules for local-only artifacts.
+- Updated GitHub repository settings with GitHub CLI: enabled Issues, disabled
+  Projects and Wiki, set the repository homepage to
+  `https://rdpackages.github.io/`, enabled delete-branch-on-merge, and enabled
+  Dependabot vulnerability alerts and automated security fixes.

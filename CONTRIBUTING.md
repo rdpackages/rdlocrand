@@ -59,6 +59,10 @@ environment and run:
 python scripts/check-python.py --build --no-install
 ```
 
+The Python package README is used as the PyPI long description. Do not remove
+`Python/rdlocrand/README.md` unless `Python/rdlocrand/setup.cfg` is updated at
+the same time.
+
 For Stata package manifest checks:
 
 ```sh

@@ -40,6 +40,9 @@ htmlcov/
 .nox/
 .venv/
 venv/
+.env
+.env.*
+.python-version
 build/
 dist/
 *.egg-info/
@@ -54,6 +57,9 @@ Python/rdlocrand/src/**/__pycache__/
 *.smcl
 *.ster
 *.tmp
+*.bak
+*.orig
+*.old
 
 # OS/editor files
 .DS_Store

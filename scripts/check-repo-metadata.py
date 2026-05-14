@@ -15,6 +15,7 @@ FORBIDDEN_TEXT = {
     "old Rocio email": "titiunik@princeton.edu",
     "old Gonzalo email": "gvazquez@econ.ucsb.edu",
     "old Ricardo email": "rmasini@ucdavis.edu",
+    "old Stata install branch": "raw.githubusercontent.com/rdpackages/rdlocrand/master/",
 }
 
 TEXT_SUFFIXES = {".R", ".Rd", ".ado", ".cfg", ".do", ".md", ".pkg", ".py", ".sthlp", ".toc", ".toml", ".txt", ".yml", ".yaml"}
@@ -53,7 +54,7 @@ def iter_release_text_files(repo_root: Path) -> list[Path]:
         repo_root / "stata",
         repo_root / ".github" / "workflows",
     ]
-    files = [repo_root / "README.md", repo_root / "CONTRIBUTING.md"]
+    files = [repo_root / "README.md", repo_root / "CONTRIBUTING.md", repo_root / "SECURITY.md"]
     for root in roots:
         if not root.exists():
             continue
@@ -79,6 +80,20 @@ def main() -> int:
     root_text = read(root_readme)
     ensure_contains(errors, root_readme.relative_to(repo_root), root_text, "frontend URL", FRONTEND_URL)
     ensure_contains(errors, root_readme.relative_to(repo_root), root_text, "repository URL", REPO_URL)
+    ensure_contains(
+        errors,
+        root_readme.relative_to(repo_root),
+        root_text,
+        "main-branch Stata install URL",
+        "raw.githubusercontent.com/rdpackages/rdlocrand/main/stata",
+    )
+
+    for required in (repo_root / "SECURITY.md", repo_root / ".github" / "dependabot.yml"):
+        if not required.exists():
+            errors.append(f"{required.relative_to(repo_root).as_posix()} is missing.")
+
+    if (repo_root / "Python" / "rdlocrand" / "ToBuild.txt").exists():
+        errors.append("Python/rdlocrand/ToBuild.txt is obsolete; use CONTRIBUTING.md instead.")
 
     r_desc = repo_root / "R" / "rdlocrand" / "DESCRIPTION"
     r_text = read(r_desc)

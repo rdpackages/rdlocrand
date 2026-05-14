@@ -21,6 +21,7 @@ REQUIRED_PKG_TEXT = {
 }
 FORBIDDEN_TEXT = {
     "deprecated package URL": "https://rdpackages.github.io/rdlocrand/",
+    "old Stata install branch": "raw.githubusercontent.com/rdpackages/rdlocrand/master/",
     "old Matias email": "cattaneo@princeton.edu",
     "old Rocio email": "titiunik@princeton.edu",
     "old Gonzalo email": "gvazquez@econ.ucsb.edu",

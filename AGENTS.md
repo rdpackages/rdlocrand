@@ -19,6 +19,7 @@ Important package paths:
 - `R/rdlocrand/DESCRIPTION`: R package metadata and dependencies.
 - `Python/rdlocrand/src/rdlocrand/`: Python source code.
 - `Python/rdlocrand/setup.cfg`: Python package metadata and dependencies.
+- `Python/rdlocrand/README.md`: Python package long description for PyPI.
 - `stata/rdlocrand.pkg`: Stata package manifest.
 - `stata/*.ado`, `stata/*.sthlp`, and `stata/*.mo`: Stata implementation and help files.
 
