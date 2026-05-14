@@ -1,19 +1,29 @@
 ###############################################################################
-# rdlocrand: illustration file
-# !version 1.0 29-Jun-2023
-# Authors: Matias Cattaneo, Ricardo Masini, Rocio Titiunik, Gonzalo Vazquez-Bare
+# rdlocrand: Illustration File
 ###############################################################################
+# Repository: https://github.com/rdpackages/rdlocrand
+###############################################################################
+
+from pathlib import Path
 
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-from rdlocrand import *
+from rdlocrand import rdrandinf, rdrbounds, rdsensitivity, rdwinselect
 
 ###############################################################################
 ## Load data
 ###############################################################################
 
-data = pd.read_csv("rdlocrand_senate.csv")
+data_candidates = [
+    Path("rdlocrand_senate.csv"),
+    Path("Python") / "rdlocrand_senate.csv",
+    Path(__file__).resolve().parent / "rdlocrand_senate.csv",
+]
+data_file = next((path for path in data_candidates if path.exists()), None)
+if data_file is None:
+    raise FileNotFoundError("Could not find rdlocrand_senate.csv")
+data = pd.read_csv(data_file)
 
 # Select predetermined covariates to be used for window selector
 

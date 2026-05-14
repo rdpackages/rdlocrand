@@ -27,10 +27,22 @@ def rdrbounds(Y, R, cutoff=0, wlist=None, gamma=None, expgamma=None,
     Gonzalo Vazquez-Bare, UC Santa Barbara. Email: gvazquezbare@gmail.com
 
     References:
+    Cattaneo, M.D., B. Frandsen, and R. Titiunik. (2015).
+    Randomization Inference in the Regression Discontinuity Design:
+    An Application to Party Advantages in the U.S. Senate.
+    Journal of Causal Inference 3(1): 1-24.
+    URL: https://rdpackages.github.io/references/Cattaneo-Frandsen-Titiunik_2015_JCI.pdf
+
     Cattaneo, M.D., R. Titiunik, and G. Vazquez-Bare. (2016).
     Inference in Regression Discontinuity Designs under Local Randomization.
     Stata Journal 16(2): 331-367.
     URL: https://rdpackages.github.io/references/Cattaneo-Titiunik-VazquezBare_2016_Stata.pdf
+
+    Cattaneo, M.D., R. Titiunik, and G. Vazquez-Bare. (2017).
+    Comparing Inference Approaches for RD Designs:
+    A Reexamination of the Effect of Head Start on Child Mortality.
+    Journal of Policy Analysis and Management 36(3): 643-681.
+    URL: https://rdpackages.github.io/references/Cattaneo-Titiunik-VazquezBare_2017_JPAM.pdf
 
     Rosenbaum, P. (2002). Observational Studies. Springer.
 
@@ -56,7 +68,7 @@ def rdrbounds(Y, R, cutoff=0, wlist=None, gamma=None, expgamma=None,
         Specifies which bounds the command calculates. Options are 'upper',
         'lower', and 'both'. Default is 'both'.
     statistic : str, optional
-        The statistic to be used in the balance tests. Allowed options are
+        The randomization test statistic to be used. Allowed options are
         'diffmeans' (difference in means statistic), 'ksmirnov'
         (Kolmogorov-Smirnov statistic), and 'ranksum'
         (Wilcoxon-Mann-Whitney standardized statistic). Default option is
@@ -72,13 +84,10 @@ def rdrbounds(Y, R, cutoff=0, wlist=None, gamma=None, expgamma=None,
         Specifies the type of kernel to use as a weighting scheme. Allowed
         kernel types are 'uniform' (uniform kernel), 'triangular' (triangular
         kernel), and 'epan' (Epanechnikov kernel). Default is 'uniform'.
-    fuzzy : None, array-like, or list, optional
-        Indicates that the RD design is fuzzy. ``fuzzy`` can be specified as a
-        vector containing the endogenous treatment values, or as a list where
-        the first element is that vector and the second element is the statistic
-        name. Allowed statistics are 'ar' (Anderson-Rubin statistic) and 'tsls'
-        (2SLS statistic). Default statistic is 'ar'. The 'tsls' statistic relies
-        on a large-sample approximation.
+    fuzzy : None or array-like, optional
+        Indicates that the RD design is fuzzy. ``fuzzy`` should contain the
+        endogenous treatment values. This option uses an Anderson-Rubin/
+        intention-to-treat statistic.
     nulltau : float, optional
         The value of the treatment effect under the null hypothesis. Default is
         0.
@@ -91,7 +100,7 @@ def rdrbounds(Y, R, cutoff=0, wlist=None, gamma=None, expgamma=None,
         Reports the p-value under fixed margins randomization, in addition to
         the p-value under Bernoulli trials.
     reps : int, optional
-        Number of replications. Default is 1000.
+        The number of replications. Default is 1000.
     seed : int, optional
         The seed to be used for the randomization tests.
 
@@ -114,6 +123,7 @@ def rdrbounds(Y, R, cutoff=0, wlist=None, gamma=None, expgamma=None,
     ---------
     # Toy dataset
     import numpy as np
+    from rdlocrand import rdrbounds
 
     np.random.seed(123)
     R = np.random.uniform(-1, 1, size=100)

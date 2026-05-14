@@ -1,19 +1,19 @@
 ###############################################################################
 # rdwinselect: window selection for randomization inference in RD
-# !version 1.1 22-May-2025
+# !version 2.0 14-May-2026
 # Authors: Matias Cattaneo, Rocio Titiunik, Gonzalo Vazquez-Bare
 ###############################################################################
 
 #' Window selection for RD designs under local randomization
 #'
-#' \code{rdwinselect} implements the window-selection procedure
-#'  based on balance tests for RD designs under local randomization.
-#'  Specifically, it constructs a sequence of nested windows around the RD cutoff
-#'  and reports binomial tests for the running variable runvar and covariate balance
-#'  tests for covariates covariates (if specified). The recommended window is the
-#'  largest window around the cutoff such that the minimum p-value of the balance test
-#'  is larger than a prespecified level for all nested (smaller) windows. By default,
-#'  the p-values are calculated using randomization inference methods.
+#' \code{rdwinselect} implements a window-selection procedure based on balance
+#'  tests for RD designs under local randomization. Specifically, it constructs a
+#'  sequence of nested windows around the RD cutoff and reports binomial tests for
+#'  the running variable and covariate balance tests for the covariates (if
+#'  specified). The recommended window is the largest window around the cutoff
+#'  such that the minimum p-value from the balance tests is larger than a
+#'  prespecified level for all nested (smaller) windows. By default, the p-values
+#'  are calculated using randomization inference methods.
 #'
 #' @author
 #' Matias D. Cattaneo, Princeton University. \email{matias.d.cattaneo@gmail.com}
@@ -24,31 +24,33 @@
 #'
 #' @references
 #'
+#' Cattaneo, M.D., B. Frandsen and R. Titiunik. (2015). \href{https://rdpackages.github.io/references/Cattaneo-Frandsen-Titiunik_2015_JCI.pdf}{Randomization Inference in the Regression Discontinuity Design: An Application to Party Advantages in the U.S. Senate}. \emph{Journal of Causal Inference} 3(1): 1-24.
+#'
 #' Cattaneo, M.D., R. Titiunik and G. Vazquez-Bare. (2016). \href{https://rdpackages.github.io/references/Cattaneo-Titiunik-VazquezBare_2016_Stata.pdf}{Inference in Regression Discontinuity Designs under Local Randomization}. \emph{Stata Journal} 16(2): 331-367.
 #'
-#'
+#' Cattaneo, M.D., R. Titiunik and G. Vazquez-Bare. (2017). \href{https://rdpackages.github.io/references/Cattaneo-Titiunik-VazquezBare_2017_JPAM.pdf}{Comparing Inference Approaches for RD Designs: A Reexamination of the Effect of Head Start on Child Mortality}. \emph{Journal of Policy Analysis and Management} 36(3): 643-681.
 #'
 #' @param R a vector containing the values of the running variable.
-#' @param X the matrix of covariates to be used in the balancing tests. The matrix is optional but the recommended window is only provided when at least one covariate is specified. This should be a matrix of size n x k where n is the total sample size and $k$ is the number of covariates.
+#' @param X the matrix of covariates to be used in the balance tests. The matrix is optional, but the recommended window is only provided when at least one covariate is specified. This should be a matrix of size n x k where n is the total sample size and k is the number of covariates.
 #' @param cutoff the RD cutoff (default is 0).
 #' @param obsmin the minimum number of observations above and below the cutoff in the smallest window. Default is 10.
 #' @param wmin the smallest window to be used.
-#' @param wobs the number of observations to be added at each side of the cutoff at each step. Default is 5.
-#' @param wasymmetric allows for asymmetric windows around the cutoff when (\code{wobs} is specified).
+#' @param wobs the number of observations to be added on each side of the cutoff at each step. Default is 5.
+#' @param wasymmetric allows for asymmetric windows around the cutoff when \code{wobs} is specified.
 #' @param wmasspoints specifies that the running variable is discrete and each masspoint should be used as a window.
 #' @param wstep the increment in window length.
 #' @param nwindows the number of windows to be used. Default is 10.
 #' @param dropmissing drop rows with missing values in covariates when calculating windows.
 #' @param statistic the statistic to be used in the balance tests. Allowed options are \code{diffmeans} (difference in means statistic), \code{ksmirnov} (Kolmogorov-Smirnov statistic), \code{ranksum} (Wilcoxon-Mann-Whitney standardized statistic) and \code{hotelling} (Hotelling's T-squared statistic). Default option is \code{diffmeans}. The statistic \code{ttest} is equivalent to \code{diffmeans} and included for backward compatibility.
-#' @param p the order of the polynomial for outcome adjustment model (for covariates). Default is 0.
+#' @param p the order of the polynomial for the outcome adjustment model (for covariates). Default is 0.
 #' @param evalat specifies the point at which the adjusted variable is evaluated. Allowed options are \code{cutoff} and \code{means}. Default is \code{cutoff}.
-#' @param kernel specifies the type of kernel to use as weighting scheme. Allowed kernel types are \code{uniform} (uniform kernel), \code{triangular} (triangular kernel) and \code{epan} (Epanechnikov kernel). Default is \code{uniform}.
+#' @param kernel specifies the type of kernel to use as a weighting scheme. Allowed kernel types are \code{uniform} (uniform kernel), \code{triangular} (triangular kernel), and \code{epan} (Epanechnikov kernel). Default is \code{uniform}.
 #' @param approx forces the command to conduct the covariate balance tests using a large-sample approximation instead of finite-sample exact randomization inference methods.
 #' @param level the minimum accepted value of the p-value from the covariate balance tests. Default is .15.
-#' @param reps number of replications. Default is 1000.
+#' @param reps the number of replications. Default is 1000.
 #' @param seed the seed to be used for the randomization tests.
 #' @param plot draws a scatter plot of the minimum p-value from the covariate balance test against window length.
-#' @param quietly suppress output
+#' @param quietly suppresses output.
 #' @param obsstep the minimum number of observations to be added on each side of the cutoff for the sequence of fixed-increment nested windows. This option is deprecated and only included for backward compatibility.
 #'
 #' @return
@@ -69,12 +71,12 @@
 #' R <- X[,1] + X[,2] + rnorm(100)
 #' # Window selection adding 5 observations at each step
 #' # Note: low number of replications to speed up process.
-#' tmp <- rdwinselect(R,X,obsmin=10,wobs=5,reps=500,quietly=TRUE)
+#' tmp <- rdwinselect(R,X,obsmin=10,wobs=5,nwindows=5,reps=500,quietly=TRUE)
 #' # Window selection setting initial window and step
 #' # The user should increase the number of replications.
 #' tmp <- rdwinselect(R,X,wmin=.5,wstep=.125,reps=500,quietly=TRUE)
 #' # Window selection with approximate (large sample) inference and p-value plot
-#' tmp <- rdwinselect(R,X,wmin=.5,wstep=.125,approx=TRUE,nwindows=80,quietly=TRUE,plot=TRUE)
+#' tmp <- rdwinselect(R,X,wmin=.5,wstep=.125,approx=TRUE,nwindows=20,quietly=TRUE,plot=TRUE)
 #'
 #'
 #' @export

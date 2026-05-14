@@ -21,11 +21,11 @@ def rdwinselect(R, X=None, cutoff=0, obsmin=None, wmin=None, wobs=None, wstep=No
     """
     Window selection for RD designs under local randomization
 
-    rdwinselect implements the window-selection procedure based on balance tests for RD designs
+    rdwinselect implements a window-selection procedure based on balance tests for RD designs
     under local randomization. Specifically, it constructs a sequence of nested windows around
-    the RD cutoff and reports binomial tests for the running variable runvar and covariate
-    balance tests for covariates (if specified). The recommended window is the largest window
-    around the cutoff such that the minimum p-value of the balance test is larger than a
+    the RD cutoff and reports binomial tests for the running variable and covariate balance
+    tests for the covariates (if specified). The recommended window is the largest window
+    around the cutoff such that the minimum p-value from the balance tests is larger than a
     prespecified level for all nested (smaller) windows. By default, the p-values are calculated
     using randomization inference methods.
 
@@ -36,17 +36,29 @@ def rdwinselect(R, X=None, cutoff=0, obsmin=None, wmin=None, wobs=None, wstep=No
     Gonzalo Vazquez-Bare, UC Santa Barbara. Email: gvazquezbare@gmail.com
 
     References:
+    Cattaneo, M.D., B. Frandsen, and R. Titiunik. (2015).
+    Randomization Inference in the Regression Discontinuity Design:
+    An Application to Party Advantages in the U.S. Senate.
+    Journal of Causal Inference 3(1): 1-24.
+    URL: https://rdpackages.github.io/references/Cattaneo-Frandsen-Titiunik_2015_JCI.pdf
+
     Cattaneo, M.D., R. Titiunik, and G. Vazquez-Bare. (2016).
     Inference in Regression Discontinuity Designs under Local Randomization.
     Stata Journal 16(2): 331-367.
     URL: https://rdpackages.github.io/references/Cattaneo-Titiunik-VazquezBare_2016_Stata.pdf
+
+    Cattaneo, M.D., R. Titiunik, and G. Vazquez-Bare. (2017).
+    Comparing Inference Approaches for RD Designs:
+    A Reexamination of the Effect of Head Start on Child Mortality.
+    Journal of Policy Analysis and Management 36(3): 643-681.
+    URL: https://rdpackages.github.io/references/Cattaneo-Titiunik-VazquezBare_2017_JPAM.pdf
 
     Parameters:
     ----------
     R : array-like
         A vector containing the values of the running variable.
     X : array-like, optional
-        The matrix of covariates to be used in the balancing tests. The matrix is optional but
+        The matrix of covariates to be used in the balance tests. The matrix is optional, but
         the recommended window is only provided when at least one covariate is specified.
         This should be a matrix of size n x k where n is the total sample size and k is the number
         of covariates.
@@ -58,7 +70,7 @@ def rdwinselect(R, X=None, cutoff=0, obsmin=None, wmin=None, wobs=None, wstep=No
     wmin : float, optional
         The smallest window to be used.
     wobs : int, optional
-        The number of observations to be added at each side of the cutoff at each step.
+        The number of observations to be added on each side of the cutoff at each step.
         Default is 5.
     wasymmetric : bool, optional
         Allows for asymmetric windows around the cutoff when wobs is specified.
@@ -77,7 +89,7 @@ def rdwinselect(R, X=None, cutoff=0, obsmin=None, wmin=None, wobs=None, wstep=No
         (Hotelling's T-squared statistic). Default option is 'diffmeans'. The statistic
         'ttest' is equivalent to 'diffmeans' and included for backward compatibility.
     p : int, optional
-        The order of the polynomial for outcome adjustment model (for covariates). Default is 0.
+        The order of the polynomial for the outcome adjustment model (for covariates). Default is 0.
     evalat : str, optional
         Specifies the point at which the adjusted variable is evaluated. Allowed options are
         'cutoff' and 'means'. Default is 'cutoff'.
@@ -91,13 +103,13 @@ def rdwinselect(R, X=None, cutoff=0, obsmin=None, wmin=None, wobs=None, wstep=No
     level : float, optional
         The minimum accepted value of the p-value from the covariate balance tests. Default is 0.15.
     reps : int, optional
-        Number of replications. Default is 1000.
+        The number of replications. Default is 1000.
     seed : int, optional
         The seed to be used for the randomization tests.
     plot : bool, optional
         Draws a scatter plot of the minimum p-value from the covariate balance test against window length.
     quietly : bool, optional
-        Suppress output.
+        Suppresses output.
     obsstep : int, optional
         The minimum number of observations to be added on each side of the cutoff for the sequence
         of fixed-increment nested windows. This option is deprecated and only included for backward
@@ -120,6 +132,7 @@ def rdwinselect(R, X=None, cutoff=0, obsmin=None, wmin=None, wobs=None, wstep=No
     Examples:
     ---------
     import numpy as np
+    from rdlocrand import rdwinselect
 
     np.random.seed(123)
     X = np.random.randn(100, 2)
@@ -127,14 +140,14 @@ def rdwinselect(R, X=None, cutoff=0, obsmin=None, wmin=None, wobs=None, wstep=No
 
     # Window selection adding 5 observations at each step
     # Note: low number of replications to speed up process.
-    tmp = rdwinselect(R, X, obsmin=10, wobs=5, reps=500, quietly=True)
+    tmp = rdwinselect(R, X, obsmin=10, wobs=5, nwindows=5, reps=500, quietly=True)
 
     # Window selection setting initial window and step
     # The user should increase the number of replications.
     tmp = rdwinselect(R, X, wmin=0.5, wstep=0.125, reps=500, quietly=True)
 
     # Window selection with approximate (large sample) inference and p-value plot
-    tmp = rdwinselect(R, X, wmin=0.5, wstep=0.125, approx=True, nwindows=80, quietly=True, plot=True)
+    tmp = rdwinselect(R, X, wmin=0.5, wstep=0.125, approx=True, nwindows=20, quietly=True, plot=True)
     """
     
     ###############################################################################

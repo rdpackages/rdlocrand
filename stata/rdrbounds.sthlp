@@ -1,5 +1,5 @@
 {smcl}
-{* *! version 2.0 13May2026}{...}
+{* *! version 2.0 14May2026}{...}
 {viewerjumpto "Syntax" "rdrbounds##syntax"}{...}
 {viewerjumpto "Description" "rdrbounds##description"}{...}
 {viewerjumpto "Options" "rdrbounds##options"}{...}
@@ -42,7 +42,7 @@
 {marker description}{...}
 {title:Description}
 
-{p 4 8}{cmd:rdrbounds} computes Rosenbaum bounds for p-values in regression discontinuity (RD) designs under local randomization. See
+{p 4 8}{cmd:rdrbounds} computes lower and upper Rosenbaum bounds for randomization p-values in regression discontinuity (RD) designs under local randomization. See
 {browse "https://rdpackages.github.io/references/Cattaneo-Frandsen-Titiunik_2015_JCI.pdf":Cattaneo, Frandsen and Titiunik (2015)}
 and
 {browse "https://rdpackages.github.io/references/Cattaneo-Titiunik-VazquezBare_2017_JPAM.pdf":Cattaneo, Titiunik and Vazquez-Bare (2017)}
@@ -78,7 +78,7 @@ By default the program constructs 10 windows around the cutoff, the first one in
 {p 4 8}{cmd:expgamma(}{it:numlist}{cmd:)} specifies the list of values of exp(gamma) to be evaluated.
 Default is {cmd:expgamma(1.5 2 2.5 3)}.{p_end}
 
-{p 4 8}{cmd:bound(}{it:string}{cmd:)} specifies which bounds the command calculates. Options are {cmd: upper} for upper bound, {cmd:lower} for lower bound and {cmd:both} for both upper and lower bounds.
+{p 4 8}{cmd:bound(}{it:string}{cmd:)} specifies which bounds the command calculates. Options are {cmd:upper} for upper bound, {cmd:lower} for lower bound, and {cmd:both} for both upper and lower bounds.
 Default is {cmd:bound(both)}.{p_end}
 
 {dlgtab:Statistic}
@@ -94,10 +94,10 @@ Default is {cmd:p(0)}.{p_end}
 
 {p 4 8}{cmd:evalat(}{it:point}{cmd:)} specifies the point at which the adjusted variable is evaluated. Allowed options are {cmd:cutoff} and {cmd:means}. Default is {cmd:evalat(cutoff)}.
 
-{p 4 8}{cmd:kernel(}{it:kerneltype}{cmd:)}  specifies the type of kernel to use as weighting scheme. Allowed kernel types are {cmd:uniform} (uniform kernel), {cmd:triangular} (triangular kernel) and {cmd:epan} (Epanechnikov kernel). 
+{p 4 8}{cmd:kernel(}{it:kerneltype}{cmd:)} specifies the type of kernel to use as a weighting scheme. Allowed kernel types are {cmd:uniform} (uniform kernel), {cmd:triangular} (triangular kernel), and {cmd:epan} (Epanechnikov kernel).
 Default is {cmd:kernel(uniform)}.
 
-{p 4 8}{cmd:fuzzy(}{it:fuzzy_var [fuzzy_stat]}{cmd:)} name of the endogenous treatment variable in fuzzy design. This option employs an Anderson-Rubin-type statistic.
+{p 4 8}{cmd:fuzzy(}{it:fuzzy_var [fuzzy_stat]}{cmd:)} specifies the endogenous treatment variable in a fuzzy design. This option uses an Anderson-Rubin/intention-to-treat statistic.
 
 {dlgtab:Inference}
 
@@ -105,12 +105,12 @@ Default is {cmd:kernel(uniform)}.
 Default is {cmd:nulltau(0)}.{p_end}
 
 {p 4 8}{cmd:prob(}{it:varname}{cmd:)} specifies the name of the variable containing individual probabilities of treatment in a Bernoulli trial when the selection factor gamma is zero.
-Default is the porportion of treated units in each window (assumed equal for all units).{p_end}
+Default is the proportion of treated units in each window (assumed equal for all units).{p_end}
 
 {p 4 8}{cmd:{opt fm:pval}} calculates the p-value under fixed margins randomization, in addition to the p-value under Bernoulli trials.{p_end}
 
 {p 4 8}{cmd:reps(}{it:#}{cmd:)} specifies the number of replications.
-Default is {cmd: reps(500)}.{p_end}
+Default is {cmd:reps(500)}.{p_end}
 
 {p 4 8}{cmd:seed(}{it:#}{cmd:)} sets the seed for the randomization test. With this option, the user can manually set the desired seed, or can enter the value -1 to use the system seed.
 Default is {cmd:seed(666)}.{p_end}
@@ -125,7 +125,7 @@ Default is {cmd:seed(666)}.{p_end}
 {p 4 8}Setup{p_end}
 {p 8 8}{cmd:. use rdlocrand_senate.dta, clear}{p_end}
 
-{p 4 8}Bounds using 1000 replications specifying exp(gamma){p_end}
+{p 4 8}Bounds using 1000 replications and specified exp(gamma) values{p_end}
 {p 8 8}{cmd:. rdrbounds demvoteshfor2 demmv, expgamma(1.2 1.5 2) wlist(.75 1) reps(1000)}{p_end}
 
 {p 4 8}Bounds specifying gamma{p_end}

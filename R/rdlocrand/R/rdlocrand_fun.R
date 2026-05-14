@@ -1,6 +1,6 @@
 #################################################################
 # Auxiliary functions for rdlocrand
-# !version 1.1 22-May-2025
+# !version 2.0 14-May-2026
 # Authors: Matias Cattaneo, Rocio Titiunik, Gonzalo Vazquez-Bare
 #################################################################
 
@@ -477,4 +477,3 @@ findstep <- function(R,D,obsmin,obsstep,times) {
   step <- max(S)
   return(step)
 }
-

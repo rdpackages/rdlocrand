@@ -35,23 +35,23 @@ rdsensitivity(
 
 \item{wlist_left}{the list of windows to the left of the cutoff. If not specified, the windows are constructed symmetrically around the cutoff based on the values in wlist.}
 
-\item{tlist}{the list of values of the treatment effect under the null to be evaluated. By default the program employs ten evenly spaced points within the asymptotic confidence interval for a constant treatment effect in the smallest window to be used.}
+\item{tlist}{the list of treatment-effect values under the null to be evaluated. By default the program uses ten evenly spaced points within the asymptotic confidence interval for a constant treatment effect in the smallest window to be used.}
 
-\item{statistic}{the statistic to be used in the balance tests. Allowed options are \code{diffmeans} (difference in means statistic), \code{ksmirnov} (Kolmogorov-Smirnov statistic) and \code{ranksum} (Wilcoxon-Mann-Whitney standardized statistic). Default option is \code{diffmeans}. The statistic \code{ttest} is equivalent to \code{diffmeans} and included for backward compatibility.}
+\item{statistic}{the randomization test statistic to be used. Allowed options are \code{diffmeans} (difference in means statistic), \code{ksmirnov} (Kolmogorov-Smirnov statistic), and \code{ranksum} (Wilcoxon-Mann-Whitney standardized statistic). Default option is \code{diffmeans}. The statistic \code{ttest} is equivalent to \code{diffmeans} and included for backward compatibility.}
 
-\item{p}{the order of the polynomial for outcome adjustment model. Default is 0.}
+\item{p}{the order of the polynomial for the outcome adjustment model. Default is 0.}
 
 \item{evalat}{specifies the point at which the adjusted variable is evaluated. Allowed options are \code{cutoff} and \code{means}. Default is \code{cutoff}.}
 
-\item{kernel}{specifies the type of kernel to use as weighting scheme. Allowed kernel types are \code{uniform} (uniform kernel), \code{triangular} (triangular kernel) and \code{epan} (Epanechnikov kernel). Default is \code{uniform}.}
+\item{kernel}{specifies the type of kernel to use as a weighting scheme. Allowed kernel types are \code{uniform} (uniform kernel), \code{triangular} (triangular kernel), and \code{epan} (Epanechnikov kernel). Default is \code{uniform}.}
 
-\item{fuzzy}{indicates that the RD design is fuzzy. \code{fuzzy} can be specified as a vector containing the values of the endogenous treatment variable, or as a list where the first element is the vector of endogenous treatment values and the second element is a string containing the name of the statistic to be used. Allowed statistics are \code{ar} (Anderson-Rubin statistic) and \code{tsls} (2SLS statistic). Default statistic is \code{ar}. The \code{tsls} statistic relies on large-sample approximation.}
+\item{fuzzy}{indicates that the RD design is fuzzy. \code{fuzzy} should be specified as a vector containing the values of the endogenous treatment variable. This option uses an Anderson-Rubin/intention-to-treat statistic.}
 
-\item{ci}{returns the confidence interval corresponding to the indicated window length. \code{ci} has to be a two-dimensional vector indicating the left and right limits of the window. Default alpha is .05 (95\% level CI).}
+\item{ci}{returns the confidence interval corresponding to the indicated window length. \code{ci} must be a two-element vector containing the left and right limits of the window. Default alpha is .05 (95\% level CI).}
 
-\item{ci_alpha}{Specifies value of alpha for the confidence interval. Default alpha is .05 (95\% level CI).}
+\item{ci_alpha}{specifies the value of alpha for the confidence interval. Default alpha is .05 (95\% level CI).}
 
-\item{reps}{number of replications. Default is 1000.}
+\item{reps}{the number of replications. Default is 1000.}
 
 \item{seed}{the seed to be used for the randomization tests.}
 
@@ -68,7 +68,7 @@ A list containing:
 \item{ci}{confidence interval; included only when \code{ci} is specified.}
 }
 \description{
-\code{rdsensitivity} analyze the sensitivity of randomization p-values
+\code{rdsensitivity} analyzes the sensitivity of randomization p-values
 and confidence intervals to different window lengths.
 }
 \examples{
@@ -85,7 +85,11 @@ tmp <- rdsensitivity(Y,R,wlist=seq(.75,2,by=.25),tlist=seq(0,5,by=1),
 
 }
 \references{
+Cattaneo, M.D., B. Frandsen and R. Titiunik. (2015). \href{https://rdpackages.github.io/references/Cattaneo-Frandsen-Titiunik_2015_JCI.pdf}{Randomization Inference in the Regression Discontinuity Design: An Application to Party Advantages in the U.S. Senate}. \emph{Journal of Causal Inference} 3(1): 1-24.
+
 Cattaneo, M.D., R. Titiunik and G. Vazquez-Bare. (2016). \href{https://rdpackages.github.io/references/Cattaneo-Titiunik-VazquezBare_2016_Stata.pdf}{Inference in Regression Discontinuity Designs under Local Randomization}. \emph{Stata Journal} 16(2): 331-367.
+
+Cattaneo, M.D., R. Titiunik and G. Vazquez-Bare. (2017). \href{https://rdpackages.github.io/references/Cattaneo-Titiunik-VazquezBare_2017_JPAM.pdf}{Comparing Inference Approaches for RD Designs: A Reexamination of the Effect of Head Start on Child Mortality}. \emph{Journal of Policy Analysis and Management} 36(3): 643-681.
 }
 \author{
 Matias D. Cattaneo, Princeton University. \email{matias.d.cattaneo@gmail.com}

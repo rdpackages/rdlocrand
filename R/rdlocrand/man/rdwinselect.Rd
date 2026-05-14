@@ -32,7 +32,7 @@ rdwinselect(
 \arguments{
 \item{R}{a vector containing the values of the running variable.}
 
-\item{X}{the matrix of covariates to be used in the balancing tests. The matrix is optional but the recommended window is only provided when at least one covariate is specified. This should be a matrix of size n x k where n is the total sample size and $k$ is the number of covariates.}
+\item{X}{the matrix of covariates to be used in the balance tests. The matrix is optional, but the recommended window is only provided when at least one covariate is specified. This should be a matrix of size n x k where n is the total sample size and k is the number of covariates.}
 
 \item{cutoff}{the RD cutoff (default is 0).}
 
@@ -40,11 +40,11 @@ rdwinselect(
 
 \item{wmin}{the smallest window to be used.}
 
-\item{wobs}{the number of observations to be added at each side of the cutoff at each step. Default is 5.}
+\item{wobs}{the number of observations to be added on each side of the cutoff at each step. Default is 5.}
 
 \item{wstep}{the increment in window length.}
 
-\item{wasymmetric}{allows for asymmetric windows around the cutoff when (\code{wobs} is specified).}
+\item{wasymmetric}{allows for asymmetric windows around the cutoff when \code{wobs} is specified.}
 
 \item{wmasspoints}{specifies that the running variable is discrete and each masspoint should be used as a window.}
 
@@ -54,23 +54,23 @@ rdwinselect(
 
 \item{statistic}{the statistic to be used in the balance tests. Allowed options are \code{diffmeans} (difference in means statistic), \code{ksmirnov} (Kolmogorov-Smirnov statistic), \code{ranksum} (Wilcoxon-Mann-Whitney standardized statistic) and \code{hotelling} (Hotelling's T-squared statistic). Default option is \code{diffmeans}. The statistic \code{ttest} is equivalent to \code{diffmeans} and included for backward compatibility.}
 
-\item{p}{the order of the polynomial for outcome adjustment model (for covariates). Default is 0.}
+\item{p}{the order of the polynomial for the outcome adjustment model (for covariates). Default is 0.}
 
 \item{evalat}{specifies the point at which the adjusted variable is evaluated. Allowed options are \code{cutoff} and \code{means}. Default is \code{cutoff}.}
 
-\item{kernel}{specifies the type of kernel to use as weighting scheme. Allowed kernel types are \code{uniform} (uniform kernel), \code{triangular} (triangular kernel) and \code{epan} (Epanechnikov kernel). Default is \code{uniform}.}
+\item{kernel}{specifies the type of kernel to use as a weighting scheme. Allowed kernel types are \code{uniform} (uniform kernel), \code{triangular} (triangular kernel), and \code{epan} (Epanechnikov kernel). Default is \code{uniform}.}
 
 \item{approx}{forces the command to conduct the covariate balance tests using a large-sample approximation instead of finite-sample exact randomization inference methods.}
 
 \item{level}{the minimum accepted value of the p-value from the covariate balance tests. Default is .15.}
 
-\item{reps}{number of replications. Default is 1000.}
+\item{reps}{the number of replications. Default is 1000.}
 
 \item{seed}{the seed to be used for the randomization tests.}
 
 \item{plot}{draws a scatter plot of the minimum p-value from the covariate balance test against window length.}
 
-\item{quietly}{suppress output}
+\item{quietly}{suppresses output.}
 
 \item{obsstep}{the minimum number of observations to be added on each side of the cutoff for the sequence of fixed-increment nested windows. This option is deprecated and only included for backward compatibility.}
 }
@@ -86,14 +86,14 @@ above the cutoff, and window endpoints for each candidate window.}
 \item{summary}{matrix of sample-size summaries by side of the cutoff.}
 }
 \description{
-\code{rdwinselect} implements the window-selection procedure
- based on balance tests for RD designs under local randomization.
- Specifically, it constructs a sequence of nested windows around the RD cutoff
- and reports binomial tests for the running variable runvar and covariate balance
- tests for covariates covariates (if specified). The recommended window is the
- largest window around the cutoff such that the minimum p-value of the balance test
- is larger than a prespecified level for all nested (smaller) windows. By default,
- the p-values are calculated using randomization inference methods.
+\code{rdwinselect} implements a window-selection procedure based on balance
+ tests for RD designs under local randomization. Specifically, it constructs a
+ sequence of nested windows around the RD cutoff and reports binomial tests for
+ the running variable and covariate balance tests for the covariates (if
+ specified). The recommended window is the largest window around the cutoff
+ such that the minimum p-value from the balance tests is larger than a
+ prespecified level for all nested (smaller) windows. By default, the p-values
+ are calculated using randomization inference methods.
 }
 \examples{
 # Toy dataset
@@ -102,17 +102,21 @@ X <- array(rnorm(200),dim=c(100,2))
 R <- X[,1] + X[,2] + rnorm(100)
 # Window selection adding 5 observations at each step
 # Note: low number of replications to speed up process.
-tmp <- rdwinselect(R,X,obsmin=10,wobs=5,reps=500,quietly=TRUE)
+tmp <- rdwinselect(R,X,obsmin=10,wobs=5,nwindows=5,reps=500,quietly=TRUE)
 # Window selection setting initial window and step
 # The user should increase the number of replications.
 tmp <- rdwinselect(R,X,wmin=.5,wstep=.125,reps=500,quietly=TRUE)
 # Window selection with approximate (large sample) inference and p-value plot
-tmp <- rdwinselect(R,X,wmin=.5,wstep=.125,approx=TRUE,nwindows=80,quietly=TRUE,plot=TRUE)
+tmp <- rdwinselect(R,X,wmin=.5,wstep=.125,approx=TRUE,nwindows=20,quietly=TRUE,plot=TRUE)
 
 
 }
 \references{
+Cattaneo, M.D., B. Frandsen and R. Titiunik. (2015). \href{https://rdpackages.github.io/references/Cattaneo-Frandsen-Titiunik_2015_JCI.pdf}{Randomization Inference in the Regression Discontinuity Design: An Application to Party Advantages in the U.S. Senate}. \emph{Journal of Causal Inference} 3(1): 1-24.
+
 Cattaneo, M.D., R. Titiunik and G. Vazquez-Bare. (2016). \href{https://rdpackages.github.io/references/Cattaneo-Titiunik-VazquezBare_2016_Stata.pdf}{Inference in Regression Discontinuity Designs under Local Randomization}. \emph{Stata Journal} 16(2): 331-367.
+
+Cattaneo, M.D., R. Titiunik and G. Vazquez-Bare. (2017). \href{https://rdpackages.github.io/references/Cattaneo-Titiunik-VazquezBare_2017_JPAM.pdf}{Comparing Inference Approaches for RD Designs: A Reexamination of the Effect of Head Start on Child Mortality}. \emph{Journal of Policy Analysis and Management} 36(3): 643-681.
 }
 \author{
 Matias D. Cattaneo, Princeton University. \email{matias.d.cattaneo@gmail.com}

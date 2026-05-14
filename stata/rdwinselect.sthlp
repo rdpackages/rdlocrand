@@ -1,5 +1,5 @@
 {smcl}
-{* *! version 2.0 13May2026}{...}
+{* *! version 2.0 14May2026}{...}
 {viewerjumpto "Syntax" "rdwinselect##syntax"}{...}
 {viewerjumpto "Description" "rdwinselect##description"}{...}
 {viewerjumpto "Options" "rdwinselect##options"}{...}
@@ -46,7 +46,7 @@
 {marker description}{...}
 {title:Description}
 
-{p 4 8}{cmd:rdwinselect} implements window selection procedure based balance tests for regression discontinuity (RD) designs under local randomization. Specifically, it constructs a sequence of nested windows around the RD cutoff and reports binomial tests for running variable {it:runvar} and covariate balance tests for covariates {it:covariates} (if specified). The recommended window is the largest window around the cutoff such that the minimum p-values of the balance tests is larger than a pre-specified level for all nested (smaller) windows. By default, the p-values are calculated employing randomization inference methods. See
+{p 4 8}{cmd:rdwinselect} implements a window selection procedure based on balance tests for regression discontinuity (RD) designs under local randomization. Specifically, it constructs a sequence of nested windows around the RD cutoff and reports binomial tests for the running variable {it:runvar} and covariate balance tests for covariates {it:covariates} (if specified). The recommended window is the largest window around the cutoff such that the minimum p-value from the balance tests is larger than a prespecified level for all nested (smaller) windows. By default, the p-values are calculated using randomization inference methods. See
 {browse "https://rdpackages.github.io/references/Cattaneo-Frandsen-Titiunik_2015_JCI.pdf":Cattaneo, Frandsen and Titiunik (2015)}
 and
 {browse "https://rdpackages.github.io/references/Cattaneo-Titiunik-VazquezBare_2017_JPAM.pdf":Cattaneo, Titiunik and Vazquez-Bare (2017)}
@@ -78,7 +78,7 @@ Default is {cmd:obsmin(10)}.{p_end}
 Can be a single number to specify the length of the (symmetric) initial window, or two numbers to specify the left and right limits of the initial window.
 Specifying both {cmd:wmin(}{it:#}{cmd:)} and {cmd:obsmin(}{it:#}{cmd:)} returns an error.{p_end}
 
-{p 4 8}{cmd:wobs(}{it:#}{cmd:)} specifies the number of observations to be added at each side of the cutoff at each step.
+{p 4 8}{cmd:wobs(}{it:#}{cmd:)} specifies the number of observations to be added on each side of the cutoff at each step.
 Default is {cmd:wobs(5)}.{p_end}
 
 {p 4 8}{cmd:wstep(}{it:#}{cmd:)} specifies the increment in window length.
@@ -91,7 +91,7 @@ Specifying both {cmd:wobs(}{it:#}{cmd:)} and {cmd:wstep(}{it:#}{cmd:)} returns a
 {p 4 8}{cmd:{opt nw:indows}(}{it:#}{cmd:)} specifies the number of windows to be used.
 Default is {cmd:nwindows(10)}.{p_end}
 
-{p 4 8}{cmd:{opt dropmiss:ing}} drop rows with missing values in covariates when calculating windows.{p_end}
+{p 4 8}{cmd:{opt dropmiss:ing}} drops rows with missing values in covariates when calculating windows.{p_end}
 
 {dlgtab:Statistic}
 
@@ -107,7 +107,7 @@ Default is {cmd:p(0)}.{p_end}
 
 {p 4 8}{cmd:evalat(}{it:point}{cmd:)} specifies the point at which the adjusted variable is evaluated. Allowed options are {cmd:cutoff} and {cmd:means}. Default is {cmd:evalat(cutoff)}.
 
-{p 4 8}{cmd:kernel(}{it:kerneltype}{cmd:)}  specifies the type of kernel to use as weighting scheme. Allowed kernel types are {cmd:uniform} (uniform kernel), {cmd:triangular} (triangular kernel) and {cmd:epan} (Epanechnikov kernel). 
+{p 4 8}{cmd:kernel(}{it:kerneltype}{cmd:)} specifies the type of kernel to use as a weighting scheme. Allowed kernel types are {cmd:uniform} (uniform kernel), {cmd:triangular} (triangular kernel), and {cmd:epan} (Epanechnikov kernel).
 Default is {cmd:kernel(uniform)}.
 
 {dlgtab:Inference}
@@ -144,7 +144,7 @@ This option is deprecated and only included for backward compatibility. We recom
 {title:Example: Cattaneo, Frandsen and Titiunik (2015) Incumbency Data}
 
 {p 4 8}Setup{p_end}
-{p 8 8}{cmd:. use rdlocrand_senate.dta}{p_end}
+{p 8 8}{cmd:. use rdlocrand_senate.dta, clear}{p_end}
 
 {p 4 8}Window selection with three covariates and default options{p_end}
 {p 8 8}{cmd:. rdwinselect demmv dopen population demvoteshlag1}{p_end}
@@ -158,7 +158,7 @@ This option is deprecated and only included for backward compatibility. We recom
 {p 4 8}Window selection setting smallest window at .5 and with .125 length increments{p_end}
 {p 8 8}{cmd:. rdwinselect demmv dopen population demvoteshlag1, wmin(.5) wstep(.125)}{p_end}
 
-{p 4 8}Window selection with asymptotic p-values using 40 windows with scatter plot{p_end}
+{p 4 8}Window selection with large-sample p-values using 40 windows and a scatter plot{p_end}
 {p 8 8}{cmd:. rdwinselect demmv dopen population demvoteshlag1, nwindows(40) approximate plot}{p_end}
 
 {p 4 8}Modify graph options: add title and x-axis label{p_end}
@@ -192,7 +192,7 @@ This option is deprecated and only included for backward compatibility. We recom
 {p2col 5 20 24 2: Matrices}{p_end}
 {synopt:{cmd:r(wlist_left)}} matrix with left endpoints of candidate windows{p_end}
 {synopt:{cmd:r(wlist_right)}} matrix with right endpoints of candidate windows{p_end}
-{synopt:{cmd:r(results)}} stores the minimum p-value from covariate balance test, p-value from binomial test, sample sizes and window length in each window{p_end}
+{synopt:{cmd:r(results)}} matrix containing the minimum covariate-balance p-value, selected covariate index, binomial-test p-value, sample sizes, and window endpoints for each candidate window{p_end}
 
 		
 {marker references}{...}

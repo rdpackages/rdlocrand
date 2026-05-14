@@ -3,7 +3,7 @@
 * Authors: Matias Cattaneo, Rocio Titiunik, Gonzalo Vazquez-Bare
 * NOTE: runvar must be recentered at the cutoff before running
 ********************************************************************************
-* !version 2.0 2026-05-13
+* !version 2.0 2026-05-14
 
 capture program drop rdrandinf_model
 program define rdrandinf_model, rclass

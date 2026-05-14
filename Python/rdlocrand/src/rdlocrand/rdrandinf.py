@@ -30,10 +30,22 @@ def rdrandinf(Y, R, cutoff=0, wl=None, wr=None, statistic='diffmeans', p=0, eval
     Gonzalo Vazquez-Bare, UC Santa Barbara. Email: gvazquezbare@gmail.com
 
     References:
+    Cattaneo, M.D., B. Frandsen, and R. Titiunik. (2015).
+    Randomization Inference in the Regression Discontinuity Design:
+    An Application to Party Advantages in the U.S. Senate.
+    Journal of Causal Inference 3(1): 1-24.
+    URL: https://rdpackages.github.io/references/Cattaneo-Frandsen-Titiunik_2015_JCI.pdf
+
     Cattaneo, M.D., R. Titiunik, and G. Vazquez-Bare. (2016).
     Inference in Regression Discontinuity Designs under Local Randomization.
     Stata Journal 16(2): 331-367.
     URL: https://rdpackages.github.io/references/Cattaneo-Titiunik-VazquezBare_2016_Stata.pdf
+
+    Cattaneo, M.D., R. Titiunik, and G. Vazquez-Bare. (2017).
+    Comparing Inference Approaches for RD Designs:
+    A Reexamination of the Effect of Head Start on Child Mortality.
+    Journal of Policy Analysis and Management 36(3): 643-681.
+    URL: https://rdpackages.github.io/references/Cattaneo-Titiunik-VazquezBare_2017_JPAM.pdf
 
     Parameters:
     -----------
@@ -48,27 +60,28 @@ def rdrandinf(Y, R, cutoff=0, wl=None, wr=None, statistic='diffmeans', p=0, eval
     wr : float, optional
         The right limit of the window. The default takes the maximum of the running variable.
     statistic : str, optional
-        The statistic to be used in the balance tests. Allowed options are 'diffmeans' (difference in means statistic),
+        The randomization test statistic to be used. Allowed options are 'diffmeans' (difference in means statistic),
         'ksmirnov' (Kolmogorov-Smirnov statistic), 'ranksum' (Wilcoxon-Mann-Whitney standardized statistic), and 'all'.
         Default option is 'diffmeans'. The statistic 'ttest' is equivalent to 'diffmeans' and included for backward compatibility.
     p : int, optional
-        The order of the polynomial for the outcome transformation model (default is 0).
+        The order of the polynomial for the outcome adjustment model (default is 0).
     evall : float, optional
-        The point at the left of the cutoff at which to evaluate the transformed outcome. Default is the cutoff value.
+        The point to the left of the cutoff at which the adjusted outcome is evaluated. Default is the cutoff value.
     evalr : float, optional
-        The point at the right of the cutoff at which the transformed outcome is evaluated. Default is the cutoff value.
+        The point to the right of the cutoff at which the adjusted outcome is evaluated. Default is the cutoff value.
     kernel : str, optional
         Specifies the type of kernel to use as a weighting scheme. Allowed kernel types are 'uniform' (uniform kernel),
         'triangular' (triangular kernel), and 'epan' (Epanechnikov kernel). Default is 'uniform'.
     fuzzy : None or tuple or array-like, optional
-        Indicates that the RD design is fuzzy. If fuzzy is None, the RD design is not fuzzy. If fuzzy is a tuple or array-like,
+        Indicates that the RD design is fuzzy. If fuzzy is None, the RD design is not fuzzy. If fuzzy is a list,
         the first element should be the vector of endogenous treatment values, and the second element should be a string
-        containing the name of the statistic to be used. Allowed statistics are 'itt' (intention-to-treat statistic)
-        and 'tsls' (2SLS statistic). Default statistic is 'ar'. The 'tsls' statistic relies on large-sample approximation.
+        containing the statistic to be used. Allowed statistics are 'ar' or 'itt' (Anderson-Rubin/intention-to-treat
+        statistic) and 'tsls' (2SLS statistic). Default statistic is 'ar'. The 'tsls' statistic relies on a large-sample
+        approximation.
     nulltau : float, optional
         The value of the treatment effect under the null hypothesis (default is 0).
     d : float, optional
-        The effect size for asymptotic power calculation. Default is 0.5 * standard deviation of outcome variable for the control group.
+        The effect size for asymptotic power calculation. Default is 0.5 times the standard deviation of the outcome variable for the control group.
     dscale : float, optional
         The fraction of the standard deviation of the outcome variable for the control group used as an alternative hypothesis
         for asymptotic power calculation. Default is 0.5.
@@ -76,9 +89,9 @@ def rdrandinf(Y, R, cutoff=0, wl=None, wr=None, statistic='diffmeans', p=0, eval
         Calculates a confidence interval for the treatment effect by test inversion. ci can be specified as a scalar or a vector,
         where the first element indicates the value of alpha for the confidence interval (typically 0.05 or 0.01),
         and the remaining elements, if specified, indicate the grid of treatment effects to be evaluated.
-        This option uses rdsensitivity to calculate the confidence interval. See corresponding help for details.
+        This option uses rdsensitivity to calculate the confidence interval. See the corresponding help file for details.
         Note: the default tlist can be narrow in some cases, which may truncate the confidence interval.
-        We recommend the user to manually set a large enough tlist.
+        We recommend manually setting a large enough tlist.
     interfci : float, optional
         The level for Rosenbaum's confidence interval under arbitrary interference between units.
     bernoulli : array-like, optional
@@ -94,13 +107,13 @@ def rdrandinf(Y, R, cutoff=0, wl=None, wr=None, statistic='diffmeans', p=0, eval
         The covariates used by rdwinselect to choose the window when wl and wr are not specified.
         This should be a matrix of size n x k where n is the total sample size and k is the number of covariates.
     obsmin : int, optional
-        The minimum number of observations above and below the cutoff in the smallest window employed by the companion command rdwinselect.
+        The minimum number of observations above and below the cutoff in the smallest window used by the companion command rdwinselect.
         Default is 10.
     wmin : float, optional
         The smallest window to be used (if obsmin is not specified) by the companion command rdwinselect.
         Specifying both wmin and obsmin returns an error.
     wobs : int, optional
-        The number of observations to be added at each side of the cutoff at each step.
+        The number of observations to be added on each side of the cutoff at each step.
     wstep : float, optional
         The increment in window length (if obsstep is not specified) by the companion command rdwinselect.
         Specifying both obsstep and wstep returns an error.
@@ -113,8 +126,8 @@ def rdrandinf(Y, R, cutoff=0, wl=None, wr=None, statistic='diffmeans', p=0, eval
     dropmissing : bool, optional
         Drop rows with missing values in covariates when calculating windows.
     rdwstat : str, optional
-        The statistic to be used by the companion command rdwinselect (see corresponding help for options).
-        Default option is 'ttest'.
+        The statistic to be used by the companion command rdwinselect (see the corresponding help file for options).
+        Default option is 'diffmeans'.
     approx : bool, optional
         Forces the companion command rdwinselect to conduct the covariate balance tests using a large-sample approximation
         instead of finite-sample exact randomization inference methods.
@@ -150,6 +163,7 @@ def rdrandinf(Y, R, cutoff=0, wl=None, wr=None, statistic='diffmeans', p=0, eval
     ------- 
 
     import numpy as np
+    from rdlocrand import rdrandinf
 
     np.random.seed(123)
     X = np.random.normal(size=(100, 2))

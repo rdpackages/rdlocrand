@@ -1,5 +1,5 @@
 {smcl}
-{* *! version 2.0 13May2026}{...}
+{* *! version 2.0 14May2026}{...}
 {viewerjumpto "Syntax" "rdsensitivity##syntax"}{...}
 {viewerjumpto "Description" "rdsensitivity##description"}{...}
 {viewerjumpto "Options" "rdsensitivity##options"}{...}
@@ -43,7 +43,7 @@
 {marker description}{...}
 {title:Description}
 
-{p 4 8}{cmd:rdsensitivity} performs sensitivity analysis for regression discontinuity designs (RD) under local randomization. See
+{p 4 8}{cmd:rdsensitivity} analyzes the sensitivity of randomization p-values and confidence intervals to different window lengths for regression discontinuity (RD) designs under local randomization. See
 {browse "https://rdpackages.github.io/references/Cattaneo-Frandsen-Titiunik_2015_JCI.pdf":Cattaneo, Frandsen and Titiunik (2015)}
 and
 {browse "https://rdpackages.github.io/references/Cattaneo-Titiunik-VazquezBare_2017_JPAM.pdf":Cattaneo, Titiunik and Vazquez-Bare (2017)}
@@ -68,16 +68,16 @@ Default is {cmd:cutoff(0)}.{p_end}
 
 {dlgtab:Window and TE lists}
 
-{p 4 8}{cmd:wlist(}{it:#}{cmd:)} specifies the list of window limits to the right of the cutoff.
+{p 4 8}{cmd:wlist(}{it:numlist}{cmd:)} specifies the list of window limits to the right of the cutoff.
 By default the program constructs 10 symmetric windows around the cutoff, the first one including 10 treated and control observations and then adding 5 observations to each group in subsequent windows.{p_end}
 
-{p 4 8}{cmd:wlist_left(}{it:#}{cmd:)} specifies the list of window limits to the left of the cutoff.
+{p 4 8}{cmd:wlist_left(}{it:numlist}{cmd:)} specifies the list of window limits to the left of the cutoff.
 When not specified, the command uses symmetric windows around the cutoff based on {cmd:wlist()}.
 {p_end}
 
-{p 4 8}{cmd:tlist(}{it:#}{cmd:)} specifies the list of null values for the treatment effect.
-By default the program employs ten evenly spaced points within the 
-asymptotic confidence interval for a constant treatment effect in the smallest window to be employed.{p_end}
+{p 4 8}{cmd:tlist(}{it:numlist}{cmd:)} specifies the list of null values for the treatment effect.
+By default the program uses ten evenly spaced points within the
+asymptotic confidence interval for a constant treatment effect in the smallest window to be used.{p_end}
 
 {dlgtab:Statistic}
 
@@ -92,22 +92,22 @@ Default is {cmd:p(0)}.{p_end}
 
 {p 4 8}{cmd:evalat(}{it:point}{cmd:)} specifies the point at which the adjusted variable is evaluated. Allowed options are {cmd:cutoff} and {cmd:means}. Default is {cmd:evalat(cutoff)}.
 
-{p 4 8}{cmd:kernel(}{it:kerneltype}{cmd:)}  specifies the type of kernel to use as weighting scheme. Allowed kernel types are {cmd:uniform} (uniform kernel), {cmd:triangular} (triangular kernel) and {cmd:epan} (Epanechnikov kernel). 
+{p 4 8}{cmd:kernel(}{it:kerneltype}{cmd:)} specifies the type of kernel to use as a weighting scheme. Allowed kernel types are {cmd:uniform} (uniform kernel), {cmd:triangular} (triangular kernel), and {cmd:epan} (Epanechnikov kernel).
 Default is {cmd:kernel(uniform)}.
 
-{p 4 8}{cmd:fuzzy(}{it:fuzzy_var [fuzzy_stat]}{cmd:)} name of the endogenous treatment variable in fuzzy design. This option uses an Anderson-Rubin-type statistic.
+{p 4 8}{cmd:fuzzy(}{it:fuzzy_var [fuzzy_stat]}{cmd:)} specifies the endogenous treatment variable in a fuzzy design. This option uses an Anderson-Rubin/intention-to-treat statistic.
 
 {dlgtab:Inference}
 
-{p 4 8}{cmd:ci(}{it:# #}{cmd:)} returns the confidence interval corresponding to the window indicated in {it:window}. 
-First value is the left limit, second value if the right limit of the window.
-The values in {it:window} need to coincide with one of the values in {cmd:wlist} and {cmd:wlist_left}. {p_end}
+{p 4 8}{cmd:ci(}{it:# #}{cmd:)} returns the confidence interval corresponding to the indicated window.
+The first value is the left limit and the second value is the right limit of the window.
+The values in {cmd:ci()} must match one of the windows defined by {cmd:wlist()} and {cmd:wlist_left()}. {p_end}
 
-{p 4 8}{cmd:ci_alpha(}{it:#}{cmd:)} the value of alpha for the confidence interval. 
+{p 4 8}{cmd:ci_alpha(}{it:#}{cmd:)} specifies the value of alpha for the confidence interval.
 Default alpha is 0.05, corresponding to a 95 percent confidence interval.{p_end}
 
 {p 4 8}{cmd:reps(}{it:#}{cmd:)} specifies the number of replications.
-Default is {cmd: reps(1000)}.{p_end}
+Default is {cmd:reps(1000)}.{p_end}
 
 {p 4 8}{cmd:seed(}{it:#}{cmd:)} sets the seed for the randomization test. With this option, the user can manually set the desired seed, or can enter the value -1 to use the system seed.
 Default is {cmd:seed(666)}.{p_end}
@@ -136,7 +136,7 @@ Default is {cmd:seed(666)}.{p_end}
 {p 8 8}{cmd:. rdsensitivity demvoteshfor2 demmv, wlist(.75(.25)2) tlist(0(1)20) reps(1000)}{p_end}
 
 {p 4 8}Obtain confidence interval for window [-.75;.75]{p_end}
-{p 8 8}{cmd:. rdsensitivity demvoteshfor2 demmv, wlist(.75(.25)2) tlist(0(1)20) reps(1000) ci(.75)}{p_end}
+{p 8 8}{cmd:. rdsensitivity demvoteshfor2 demmv, wlist(.75(.25)2) tlist(0(1)20) reps(1000) ci(-.75 .75)}{p_end}
 
 {p 4 8}Replicate contour graph using saved dataset {p_end}
 {p 8 8}{cmd:. rdsensitivity demvoteshfor2 demmv, wlist(.75(.25)2) tlist(0(1)20) reps(1000) saving(graphdata)}{p_end}

@@ -1,7 +1,7 @@
 ###############################################################################
-# rdlocrand: illustration file
-# !version 1.1 22-May-2025
-# Authors: Matias Cattaneo, Rocio Titiunik, Gonzalo Vazquez-Bare
+# rdlocrand: Illustration File
+###############################################################################
+# Repository: https://github.com/rdpackages/rdlocrand
 ###############################################################################
 
 rm(list = ls())

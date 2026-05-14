@@ -1,6 +1,6 @@
 ###################################################################
 # rdlocrand: Local Randomization Methods for RD Designs
-# !version 1.1 22-May-2025
+# !version 2.0 14-May-2026
 # Authors: Matias Cattaneo, Rocio Titiunik, Gonzalo Vazquez-Bare
 ###################################################################
 
@@ -10,15 +10,15 @@
 #' The regression discontinuity (RD) design is a popular quasi-experimental design
 #' for causal inference and policy evaluation. Under the local randomization approach,
 #' RD designs can be interpreted as randomized experiments inside a window around the
-#' cutoff. The \code{rdlocrand} package provides tools to analyze RD designs under local
-#' randomization: \code{\link{rdrandinf}} to perform hypothesis
-#' testing using randomization inference, \code{\link{rdwinselect}} to select a window
-#' around the cutoff in which randomization is likely to hold, \code{\link{rdsensitivity}}
-#' to assess the sensitivity of the results to different window lengths and null hypotheses
-#' and \code{\link{rdrbounds}} to construct Rosenbaum bounds for sensitivity to
-#' unobserved confounders. For more details, and related \code{R}, \code{Python},
-#' and \code{Stata} packages
-#'  useful for analysis of RD designs, visit \url{https://rdpackages.github.io/}.
+#' cutoff. The \code{rdlocrand} package provides tools to analyze RD designs under
+#' local randomization: \code{\link{rdrandinf}} to perform hypothesis testing
+#' using randomization inference, \code{\link{rdwinselect}} to select a window
+#' around the cutoff in which randomization is likely to hold,
+#' \code{\link{rdsensitivity}} to assess sensitivity to different window lengths
+#' and null hypotheses, and \code{\link{rdrbounds}} to construct Rosenbaum bounds
+#' for sensitivity to unobserved confounders. For more details, and related
+#' \code{R}, \code{Python}, and \code{Stata} packages useful for analysis of RD
+#' designs, visit \url{https://rdpackages.github.io/}.
 #'
 #' @author
 #' Matias D. Cattaneo, Princeton University. \email{matias.d.cattaneo@gmail.com}

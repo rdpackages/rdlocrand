@@ -1,5 +1,5 @@
 {smcl}
-{* *! version 2.0 13May2026}{...}
+{* *! version 2.0 14May2026}{...}
 {viewerjumpto "Syntax" "rdrandinf##syntax"}{...}
 {viewerjumpto "Description" "rdrandinf##description"}{...}
 {viewerjumpto "Options" "rdrandinf##options"}{...}
@@ -105,35 +105,35 @@ Default is {cmd:p(0)} (constant treatment effect model).{p_end}
 
 {p 4 8}{cmd:evalr(}{it:#}{cmd:)} specifies the point at the right of the cutoff at which the adjusted outcome is evaluated. Default is the cutoff value.{p_end}
 
-{p 4 8}{cmd:kernel(}{it:kerneltype}{cmd:)}  specifies the type of kernel to use as weighting scheme. Allowed kernel types are {cmd:uniform} (uniform kernel), {cmd:triangular} (triangular kernel) and {cmd:epan} (Epanechnikov kernel). 
+{p 4 8}{cmd:kernel(}{it:kerneltype}{cmd:)} specifies the type of kernel to use as a weighting scheme. Allowed kernel types are {cmd:uniform} (uniform kernel), {cmd:triangular} (triangular kernel), and {cmd:epan} (Epanechnikov kernel).
 Default is {cmd:kernel(uniform)}.{p_end}
 
-{p 4 8}{cmd:fuzzy(}{it:fuzzy_var [fuzzy_stat]}{cmd:)} name of the endogenous treatment variable in fuzzy design. Options for statistic in fuzzy designs are:{p_end}
+{p 4 8}{cmd:fuzzy(}{it:fuzzy_var [fuzzy_stat]}{cmd:)} specifies the endogenous treatment variable in a fuzzy design. Options for the fuzzy statistic are:{p_end}
 {p 8 12}{cmd:itt} for the intention-to-treat (ITT) statistic (this is the default option),{p_end}
 {p 8 12}{cmd:tsls} for the two-stage least squares (TSLS) statistic (asymptotic approximation only).{p_end}
 
-{p 4 8}{cmd:{opt first:stage}} shows output from first step regression when using TSLS.{p_end}
+{p 4 8}{cmd:{opt first:stage}} shows output from the first-step regression when using TSLS.{p_end}
 
 {dlgtab:Inference}
 
 {p 4 8}{cmd:{opt null:tau}(}{it:#}{cmd:)} sets the value of the treatment effect under the null hypothesis.
 Default is {cmd:nulltau(0)}.{p_end}
 
-{p 4 8}{cmd:d(}{it:#}{cmd:)} effect size for asymptotic power calculation. Default is 0.5 * standard deviation of outcome variable for the control group.{p_end}
+{p 4 8}{cmd:d(}{it:#}{cmd:)} specifies the effect size for asymptotic power calculation. Default is 0.5 times the standard deviation of the outcome variable for the control group.{p_end}
 
-{p 4 8}{cmd:dscale(}{it:#}{cmd:)} specifies fraction of the standard deviation of the outcome variable for the control group used as alternative hypothesis for asymptotic power calculation. Default is {cmd: dscale(.5)}.{p_end}
+{p 4 8}{cmd:dscale(}{it:#}{cmd:)} specifies the fraction of the standard deviation of the outcome variable for the control group used as the alternative hypothesis for asymptotic power calculation. Default is {cmd:dscale(.5)}.{p_end}
 
 {p 4 8}{cmd:ci(}{it:alpha [tlist]}{cmd:)} calculates a confidence interval for the treatment effect by test inversion, where {it: alpha} specifies the significance level (typically 0.05 or 0.01)
 and {it: tlist} indicates the grid of treatment effects to be evaluated.
 This option uses {cmd:rdsensitivity} to calculate the confidence interval. See {help rdsensitivity:rdsensitivity} for details.
-Note: the default tlist can be narrow in some cases, which may truncate the confidence interval. We recommend the user to manually set a large enough tlist.{p_end}
+Note: the default tlist can be narrow in some cases, which may truncate the confidence interval. We recommend manually setting a large enough tlist.{p_end}
 
 {p 4 8}{cmd:{opt interf:ci}(}{it:#}{cmd:)} sets the significance level (alpha) for Rosenbaum's confidence interval under arbitrary interference between units.{p_end}
 
 {p 4 8}{cmd:{opt be:rnoulli}(}{it:varname}{cmd:)} specifies that the randomization mechanism is Bernoulli trials (instead of fixed margins randomization). 
-The values of the probability of treatment for each unit must be provided in the variable {cmd: varname}.{p_end}
+The probability of treatment for each unit must be provided in the variable {cmd:varname}.{p_end}
 
-{p 4 8}{cmd:reps(}{it:#}{cmd:)} specifies the number of replications. Default is {cmd: reps(1000)}.{p_end}
+{p 4 8}{cmd:reps(}{it:#}{cmd:)} specifies the number of replications. Default is {cmd:reps(1000)}.{p_end}
 
 {p 4 8}{cmd:seed(}{it:#}{cmd:)} sets the seed for the permutation test. With this option, the user can manually set the desired seed, or can enter the value -1 to use the system seed.
 Default is {cmd:seed(666)}.{p_end}
@@ -142,9 +142,9 @@ Default is {cmd:seed(666)}.{p_end}
 
 {p 4 8}When the window around the cutoff is not specified, {cmd:rdrandinf} can select the window automatically using the companion command {help rdwinselect:rdwinselect}. The following options are available:{p_end}
 
-{p 4 8}{cmd:{opt cov:ariates}(}{it:varlist}{cmd:)} specifies the covariates employed by the companion command {help rdwinselect:rdwinselect}.{p_end}
+{p 4 8}{cmd:{opt cov:ariates}(}{it:varlist}{cmd:)} specifies the covariates used by the companion command {help rdwinselect:rdwinselect}.{p_end}
 
-{p 4 8}{cmd:obsmin(}{it:#}{cmd:)} specifies the minimum number of observations above and below the cutoff in the smallest window employed by the companion command {help rdwinselect:rdwinselect}. Default is {cmd:obsmin(10)}.{p_end}
+{p 4 8}{cmd:obsmin(}{it:#}{cmd:)} specifies the minimum number of observations above and below the cutoff in the smallest window used by the companion command {help rdwinselect:rdwinselect}. Default is {cmd:obsmin(10)}.{p_end}
 
 {p 4 8}{cmd:wmin(}{it:# #}{cmd:)} specifies the initial window to be used (if {cmd: obsmin(}{it:#}{cmd:)} is not specified).
 Can be a single number to specify the length of the (symmetric) initial window, or two numbers to specify the left and right limits of the initial window.
@@ -162,7 +162,7 @@ Specifying both {cmd:wobs(}{it:#}{cmd:)} and {cmd:wstep(}{it:#}{cmd:)} returns a
 
 {p 4 8}{cmd:{opt nw:indows}(}{it:#}{cmd:)} specifies the number of windows to be used by the companion command {help rdwinselect:rdwinselect}. Default is {cmd:nwindows(10)}.{p_end}
 
-{p 4 8}{cmd:{opt dropmiss:ing}} drop rows with missing values in covariates when calculating windows.{p_end}
+{p 4 8}{cmd:{opt dropmiss:ing}} drops rows with missing values in covariates when calculating windows.{p_end}
 
 {p 4 8}{cmd:rdwstat(}{it:#}{cmd:)} specifies the statistic to be used by the companion command {help rdwinselect:rdwinselect} (see help file for options). Default option is {cmd:rdwstat(diffmeans)}.{p_end}
 
@@ -174,9 +174,9 @@ Specifying both {cmd:wobs(}{it:#}{cmd:)} and {cmd:wstep(}{it:#}{cmd:)} returns a
 
 {p 4 8}{cmd:plot} draws a scatter plot of the minimum p-value from the covariate balance test against window length implemented by the companion command {help rdwinselect:rdwinselect}.{p_end}
 
-{p 4 8}{cmd:graph_options(}{it:graphopts}{cmd:)} graph options for plot generated by the companion command {help rdwinselect:rdwinselect}.{p_end}
+{p 4 8}{cmd:graph_options(}{it:graphopts}{cmd:)} specifies graph options for the plot generated by the companion command {help rdwinselect:rdwinselect}.{p_end}
 
-{p 4 8}{cmd:{opt qui:etly}} supress output from  the companion command {help rdwinselect:rdwinselect}.{p_end}
+{p 4 8}{cmd:{opt qui:etly}} suppresses output from the companion command {help rdwinselect:rdwinselect}.{p_end}
 
 {p 4 8}{cmd:obsstep(}{it:#}{cmd:)} specifies the minimum number of observations to be added on each side of the cutoff by the companion command {help rdwinselect:rdwinselect}.
 This option is deprecated and only included for backward compatibility.{p_end}

@@ -1,12 +1,12 @@
 ###############################################################################
 # rdsensitivity: sensitivity analysis for randomization inference in RD
-# !version 1.1 22-May-2025
+# !version 2.0 14-May-2026
 # Authors: Matias Cattaneo, Rocio Titiunik, Gonzalo Vazquez-Bare
 ###############################################################################
 
 #' Sensitivity analysis for RD designs under local randomization
 #'
-#' \code{rdsensitivity} analyze the sensitivity of randomization p-values
+#' \code{rdsensitivity} analyzes the sensitivity of randomization p-values
 #' and confidence intervals to different window lengths.
 #'
 #'
@@ -19,24 +19,26 @@
 #'
 #' @references
 #'
+#' Cattaneo, M.D., B. Frandsen and R. Titiunik. (2015). \href{https://rdpackages.github.io/references/Cattaneo-Frandsen-Titiunik_2015_JCI.pdf}{Randomization Inference in the Regression Discontinuity Design: An Application to Party Advantages in the U.S. Senate}. \emph{Journal of Causal Inference} 3(1): 1-24.
+#'
 #' Cattaneo, M.D., R. Titiunik and G. Vazquez-Bare. (2016). \href{https://rdpackages.github.io/references/Cattaneo-Titiunik-VazquezBare_2016_Stata.pdf}{Inference in Regression Discontinuity Designs under Local Randomization}. \emph{Stata Journal} 16(2): 331-367.
 #'
-#'
+#' Cattaneo, M.D., R. Titiunik and G. Vazquez-Bare. (2017). \href{https://rdpackages.github.io/references/Cattaneo-Titiunik-VazquezBare_2017_JPAM.pdf}{Comparing Inference Approaches for RD Designs: A Reexamination of the Effect of Head Start on Child Mortality}. \emph{Journal of Policy Analysis and Management} 36(3): 643-681.
 #'
 #' @param Y a vector containing the values of the outcome variable.
 #' @param R a vector containing the values of the running variable.
 #' @param cutoff the RD cutoff (default is 0).
 #' @param wlist the list of windows to the right of the cutoff. By default the program constructs 10 windows around the cutoff with 5 observations each.
 #' @param wlist_left the list of windows to the left of the cutoff. If not specified, the windows are constructed symmetrically around the cutoff based on the values in wlist.
-#' @param tlist the list of values of the treatment effect under the null to be evaluated. By default the program employs ten evenly spaced points within the asymptotic confidence interval for a constant treatment effect in the smallest window to be used.
-#' @param statistic the statistic to be used in the balance tests. Allowed options are \code{diffmeans} (difference in means statistic), \code{ksmirnov} (Kolmogorov-Smirnov statistic) and \code{ranksum} (Wilcoxon-Mann-Whitney standardized statistic). Default option is \code{diffmeans}. The statistic \code{ttest} is equivalent to \code{diffmeans} and included for backward compatibility.
-#' @param p the order of the polynomial for outcome adjustment model. Default is 0.
+#' @param tlist the list of treatment-effect values under the null to be evaluated. By default the program uses ten evenly spaced points within the asymptotic confidence interval for a constant treatment effect in the smallest window to be used.
+#' @param statistic the randomization test statistic to be used. Allowed options are \code{diffmeans} (difference in means statistic), \code{ksmirnov} (Kolmogorov-Smirnov statistic), and \code{ranksum} (Wilcoxon-Mann-Whitney standardized statistic). Default option is \code{diffmeans}. The statistic \code{ttest} is equivalent to \code{diffmeans} and included for backward compatibility.
+#' @param p the order of the polynomial for the outcome adjustment model. Default is 0.
 #' @param evalat specifies the point at which the adjusted variable is evaluated. Allowed options are \code{cutoff} and \code{means}. Default is \code{cutoff}.
-#' @param kernel specifies the type of kernel to use as weighting scheme. Allowed kernel types are \code{uniform} (uniform kernel), \code{triangular} (triangular kernel) and \code{epan} (Epanechnikov kernel). Default is \code{uniform}.
-#' @param fuzzy indicates that the RD design is fuzzy. \code{fuzzy} can be specified as a vector containing the values of the endogenous treatment variable, or as a list where the first element is the vector of endogenous treatment values and the second element is a string containing the name of the statistic to be used. Allowed statistics are \code{ar} (Anderson-Rubin statistic) and \code{tsls} (2SLS statistic). Default statistic is \code{ar}. The \code{tsls} statistic relies on large-sample approximation.
-#' @param ci returns the confidence interval corresponding to the indicated window length. \code{ci} has to be a two-dimensional vector indicating the left and right limits of the window. Default alpha is .05 (95\% level CI).
-#' @param ci_alpha Specifies value of alpha for the confidence interval. Default alpha is .05 (95\% level CI).
-#' @param reps number of replications. Default is 1000.
+#' @param kernel specifies the type of kernel to use as a weighting scheme. Allowed kernel types are \code{uniform} (uniform kernel), \code{triangular} (triangular kernel), and \code{epan} (Epanechnikov kernel). Default is \code{uniform}.
+#' @param fuzzy indicates that the RD design is fuzzy. \code{fuzzy} should be specified as a vector containing the values of the endogenous treatment variable. This option uses an Anderson-Rubin/intention-to-treat statistic.
+#' @param ci returns the confidence interval corresponding to the indicated window length. \code{ci} must be a two-element vector containing the left and right limits of the window. Default alpha is .05 (95\% level CI).
+#' @param ci_alpha specifies the value of alpha for the confidence interval. Default alpha is .05 (95\% level CI).
+#' @param reps the number of replications. Default is 1000.
 #' @param seed the seed to be used for the randomization tests.
 #' @param nodraw suppresses contour plot.
 #' @param quietly suppresses the output table.

@@ -1,6 +1,6 @@
-# Local-Randomization Estimation, Inference, and Visualization Methods for RD Designs
+# Local Randomization Methods for RD Designs
 
-The `rdlocrand` package provides Python, R, and Stata implementations of statistical inference and graphical procedures for Regression Discontinuity designs employing local randomization methods. It provides point estimators, confidence intervals estimators, binomial manipulation testing, windows selectors, automatic plots, sensitivity analysis, and other related features.
+The `rdlocrand` package provides Python, R, and Stata estimation, inference, and visualization methods for Regression Discontinuity (RD) designs employing local randomization methods.
 
 
 ## Python Implementation
@@ -23,7 +23,7 @@ install.packages('rdlocrand')
 
 - Help: [R Manual](https://cran.r-project.org/web/packages/rdlocrand/rdlocrand.pdf), [CRAN repository](https://cran.r-project.org/package=rdlocrand).
 
-- Replication: [R-script](R/rdlocrand_illustration.R), [senate data](R/rdlocrand_senate.csv). [R illustration](R/rdlocrand_illustration.pdf).
+- Replication: [R-script](R/rdlocrand_illustration.R), [senate data](R/rdlocrand_senate.csv).
 
 ## Stata Implementation
 
