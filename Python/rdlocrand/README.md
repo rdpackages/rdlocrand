@@ -54,6 +54,4 @@ For overviews and introductions, see [rdpackages website](https://rdpackages.git
 
 - Cattaneo, M.D., R. Titiunik, and G. Vazquez-Bare. (2017). [Comparing Inference Approaches for RD Designs: A Reexamination of the Effect of Head Start on Child Mortality](https://rdpackages.github.io/references/Cattaneo-Titiunik-VazquezBare_2017_JPAM.pdf). *Journal of Policy Analysis and Management* 36(3): 643-681.
 
-- Rosenbaum, P. (2002). *Observational Studies*. Springer.
-
 <br><br>
