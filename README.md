@@ -1,7 +1,11 @@
 # Local Randomization Methods for RD Designs
 
-The `rdlocrand` package provides Python, R, and Stata estimation, inference, and visualization methods for Regression Discontinuity (RD) designs employing local randomization methods.
+The `rdlocrand` package implements estimation, inference, and graphical procedures for Regression Discontinuity (RD) designs using local randomization methods.
 
+- `rdrandinf`: randomization inference and confidence intervals under local randomization.
+- `rdwinselect`: data-driven window selection around the cutoff using covariate balance tests.
+- `rdsensitivity`: sensitivity analysis of randomization p-values and confidence intervals over treatment-effect and window grids.
+- `rdrbounds`: Rosenbaum bounds for sensitivity to unobserved confounders under local randomization.
 
 ## Python Implementation
 
