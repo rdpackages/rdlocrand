@@ -1,10 +1,14 @@
 ********************************************************************************
 * RDLOCRAND package: auxiliary functions
-* !version 2.0 2026-05-14
+* !version 2.0 2026-05-27
 * Authors: Matias Cattaneo, Rocio Titiunik, Gonzalo Vazquez-Bare
 ********************************************************************************
 
 version 13
+
+args build_mode
+local build_mode = lower("`build_mode'")
+local save_mo = inlist("`build_mode'", "mo", "dev", "development")
 
 ********************************************************************************
 ** rdlocrand_findwobs(): find window increments (rdwinselect)
@@ -85,10 +89,11 @@ void rdlocrand_findwobs(real scalar wobs,
 	st_matrix("poslist_left",poslist_left)
 	st_matrix("poslist_right",poslist_right)
 }
-
-mata mosave rdlocrand_findwobs(), replace
-
 end
+
+if `save_mo' {
+	mata: mata mosave rdlocrand_findwobs(), replace
+}
 
 
 ********************************************************************************
@@ -156,10 +161,11 @@ void rdlocrand_findwobs_sym(real scalar wobs,
 	st_numscalar("wlength",wlength)
 	st_matrix("wlist",wlist)
 }
-
-mata mosave rdlocrand_findwobs_sym(), replace
-
 end
+
+if `save_mo' {
+	mata: mata mosave rdlocrand_findwobs_sym(), replace
+}
 
 
 ********************************************************************************
@@ -181,10 +187,11 @@ void rdlocrand_reclength(Mp,real scalar level)
 	}
 	st_numscalar("index",ind)
 }
-
-mata mosave rdlocrand_reclength(), replace
-
 end
+
+if `save_mo' {
+	mata: mata mosave rdlocrand_reclength(), replace
+}
 
 ********************************************************************************
 ** rdlocrand_confint: calculate confidence interval (rdsensitivity)
@@ -229,10 +236,11 @@ void rdlocrand_confint(real matrix pvals, real scalar alpha, real matrix tlist)
 	
 	st_matrix("CI",CI)
 }
-
-mata mosave rdlocrand_confint(), replace
-
 end
+
+if `save_mo' {
+	mata: mata mosave rdlocrand_confint(), replace
+}
 
 ********************************************************************************
 ** rdlocrand_confint_check: check confidence interval (rdsensitivity)
@@ -254,10 +262,11 @@ void rdlocrand_confint_check(real matrix wlist, real scalar cileft, real scalar 
 	}
 	st_numscalar("CI_position",CI_position)
 }
-
-mata mosave rdlocrand_confint_check(), replace
-
 end
+
+if `save_mo' {
+	mata: mata mosave rdlocrand_confint_check(), replace
+}
 ********************************************************************************
 ** rdlocrand_wlength(): find window length - DEPRECATED: for backward compatibility only
 ********************************************************************************
@@ -283,10 +292,11 @@ function rdlocrand_wlength(runv, treat, cont, real scalar num)
 	
 	return(xt,xc,minw)
 }
-
-mata mosave rdlocrand_wlength(), replace
-
 end
+
+if `save_mo' {
+	mata: mata mosave rdlocrand_wlength(), replace
+}
 
 ********************************************************************************
 ** rdlocrand_findstep(): find step - DEPRECATED: for backward compatibility only
@@ -306,7 +316,20 @@ void rdlocrand_findstep(real scalar minobs,real scalar addobs,real scalar times,
 	step = max(S)
 	st_numscalar("step",step)
 }
+end
 
-mata mosave rdlocrand_findstep(), replace
+if `save_mo' {
+	mata: mata mosave rdlocrand_findstep(), replace
+}
 
+********************************************************************************
+** lrdlocrand.mlib: distributable Mata library
+********************************************************************************
+
+mata:
+mata mlib create lrdlocrand, replace
+mata mlib add lrdlocrand rdlocrand_findwobs() rdlocrand_findwobs_sym() ///
+	rdlocrand_reclength() rdlocrand_confint() rdlocrand_confint_check() ///
+	rdlocrand_wlength() rdlocrand_findstep()
+mata mlib index
 end
