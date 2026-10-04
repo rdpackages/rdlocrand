@@ -1,6 +1,6 @@
 ********************************************************************************
 * RDLOCRAND package: auxiliary functions
-* !version 2.0 2026-05-27
+* !version 3.0 2026-10-04
 * Authors: Matias Cattaneo, Rocio Titiunik, Gonzalo Vazquez-Bare
 ********************************************************************************
 
@@ -201,41 +201,24 @@ capture mata: mata drop rdlocrand_confint()
 mata:
 void rdlocrand_confint(real matrix pvals, real scalar alpha, real matrix tlist)
 {
-	
-	if(all(pvals:>=alpha)){
-	   CI = (tlist[1],tlist[cols(tlist)]) 
-	}
-	else if (all(pvals:<alpha)){
-	    CI = (.,.)
-	}
-	else {
-	    whichvec = selectindex(pvals:>=alpha)
-		index_l = min(whichvec)
-		index_r = max(whichvec)
-		indexmat = (index_l,index_r)
-		
-		whichvec_cut = whichvec
-		dif = whichvec_cut[2..cols(whichvec_cut)] - whichvec_cut[1..(cols(whichvec_cut)-1)]
-		while(any(dif:!=1)){
-		    cut = min(selectindex(dif:!=1))
-			auxvec = whichvec_cut[1..cut]
-			indexmat = (indexmat \ (min(auxvec),max(auxvec)))
-			whichvec_cut = whichvec_cut[(cut+1)..cols(whichvec_cut)]
-		    dif = whichvec_cut[2..cols(whichvec_cut)] - whichvec_cut[1..(cols(whichvec_cut)-1)]
-		}
-		CI = (tlist[1,indexmat[1,1]],tlist[1,indexmat[1,2]])
-		if (rows(indexmat)>1){
-		    indexmat = indexmat[2..rows(indexmat),1...]
-			indexmat = (indexmat \ (min(whichvec_cut),max(whichvec_cut)))
-			CI = (tlist[1,indexmat[1,1]],tlist[1,indexmat[1,2]])
-			for (j=2 ; j<=rows(indexmat) ; ++j){
-				CI = (CI \ (tlist[1,indexmat[j,1]],tlist[1,indexmat[j,2]]))
-			}
-		}
-	}
-	
-	st_matrix("CI",CI)
+    accepted = selectindex((pvals:>=alpha):&(pvals:<.))
+    CI = J(0,2,.)
+    if (length(accepted)==0) CI = (.,.)
+    else {
+        left = accepted[1]
+        right = left
+        for (j=2; j<=length(accepted); j++) {
+            if (accepted[j]!=right+1) {
+                CI = CI \ (tlist[left],tlist[right])
+                left = accepted[j]
+            }
+            right = accepted[j]
+        }
+        CI = CI \ (tlist[left],tlist[right])
+    }
+    st_matrix("CI",CI)
 }
+
 end
 
 if `save_mo' {

@@ -3,6 +3,7 @@
 
 import pandas as pd
 import numpy as np
+from rdlocrand.rdlocrand_fun import rdlocrand_inference, rdlocrand_hc_fit
 import warnings
 from scipy.stats import norm, binomtest
 import statsmodels.api as sm
@@ -16,7 +17,7 @@ def rdwinselect(R, X=None, cutoff=0, obsmin=None, wmin=None, wobs=None, wstep=No
                 wasymmetric=False, wmasspoints=False, dropmissing=False, nwindows=10,
                 statistic='diffmeans', p=0, evalat='cutoff', kernel='uniform',
                 approx=False, level=0.15, reps=1000, seed=666, plot=False, quietly=False,
-                obsstep=None):
+                obsstep=None, vce='HC3'):
     
     """
     Window selection for RD designs under local randomization
@@ -52,6 +53,12 @@ def rdwinselect(R, X=None, cutoff=0, obsmin=None, wmin=None, wobs=None, wstep=No
     A Reexamination of the Effect of Head Start on Child Mortality.
     Journal of Policy Analysis and Management 36(3): 643-681.
     URL: https://rdpackages.github.io/references/Cattaneo-Titiunik-VazquezBare_2017_JPAM.pdf
+
+    Notes:
+    With p > 0, mean balance tests use large-sample normal inference from the full
+    polynomial regression, with HC3 standard errors by default, regardless of approx.
+    For ksmirnov, ranksum, or hotelling, a positive p is replaced by p = 0
+    and a warning is issued at the end. Inference with p = 0 is unchanged.
 
     Parameters:
     ----------
@@ -115,6 +122,10 @@ def rdwinselect(R, X=None, cutoff=0, obsmin=None, wmin=None, wobs=None, wstep=No
         of fixed-increment nested windows. This option is deprecated and only included for backward
         compatibility.
 
+    vce : str, optional
+        Variance estimator for p > 0: 'HC1', 'HC2', or 'HC3' (default).
+        Ignored when p = 0.
+
     Returns:
     -------
     dict
@@ -128,6 +139,9 @@ def rdwinselect(R, X=None, cutoff=0, obsmin=None, wmin=None, wobs=None, wstep=No
           selected covariate index, binomial-test p-value, sample sizes below
           and above the cutoff, and window endpoints for each candidate window.
         - ``summary``: sample-size summaries by side of the cutoff.
+        - ``p.requested``, ``p``: requested and effective polynomial degrees.
+        - ``vce``: HC estimator, or None when p = 0.
+        - ``inference``: inference method used.
 
     Examples:
     ---------
@@ -158,6 +172,10 @@ def rdwinselect(R, X=None, cutoff=0, obsmin=None, wmin=None, wobs=None, wstep=No
         raise ValueError('Cutoff must be within the range of the running variable')
     if p < 0:
         raise ValueError('p must be a positive integer')
+    inference = rdlocrand_inference(p, statistic, vce, context='rdwinselect')
+    p = inference['p']
+    if p > 0:
+        approx, vce = True, inference['vce']
     if p > 0 and approx and (statistic != 'ttest' and statistic != 'diffmeans'):
         raise ValueError('approximate and p > 1 can only be combined with diffmeans')
     valid_statistics = ['diffmeans', 'ttest', 'ksmirnov', 'ranksum', 'hotelling']
@@ -255,13 +273,13 @@ def rdwinselect(R, X=None, cutoff=0, obsmin=None, wmin=None, wobs=None, wstep=No
         if np.isscalar(wmin):
             wmin_right = [wmin]
             wmin_left = [-wmin]
-            posmin_right = n0 + np.sum(np.logical_and(Rc <= wmin, Rc >= 0))
-            posmin_left = n0 - np.sum(np.logical_and(Rc < 0, Rc >= -wmin)) + 1
+            posmin_right = n0 + np.sum(np.logical_and(Rc <= wmin, Rc >= 0)) - 1
+            posmin_left = n0 - np.sum(np.logical_and(Rc < 0, Rc >= -wmin))
         elif len(wmin) == 2:
             wmin_left = [wmin[0]]
             wmin_right = [wmin[1]]
-            posmin_right = n0 + np.sum(np.logical_and(Rc <= wmin_right, Rc >= 0))
-            posmin_left = n0 - np.sum(np.logical_and(Rc < 0, Rc >= wmin_left)) + 1
+            posmin_right = n0 + np.sum(np.logical_and(Rc <= wmin_right, Rc >= 0)) - 1
+            posmin_left = n0 - np.sum(np.logical_and(Rc < 0, Rc >= wmin_left))
         else:
             raise ValueError('wmin option incorrectly specified')
     
@@ -288,9 +306,9 @@ def rdwinselect(R, X=None, cutoff=0, obsmin=None, wmin=None, wobs=None, wstep=No
         posr = min(n0 + 1 + np.sum(np.logical_and(Rc >= 0, Rc <= wmin_right)), n)
         if wasymmetric:
             tmp = findwobs(wobs, nwindows - 1, posl, posr, Rc, dups)
-            wlist_left = np.concatenate(([wmin_left], tmp['wlist_left']))
+            wlist_left = np.concatenate((np.atleast_1d(wmin_left), tmp['wlist_left']))
             poslist_left = np.concatenate(([posmin_left], np.array(tmp['poslist_left'])-1))
-            wlist_right = np.concatenate(([wmin_right], tmp['wlist_right']))
+            wlist_right = np.concatenate((np.atleast_1d(wmin_right), tmp['wlist_right']))
             poslist_right = np.concatenate(([posmin_right], np.array(tmp['poslist_right'])-1))
         else:
             wlist = findwobs_sym(wobs, nwindows - 1, posl, posr, Rc, dups)
@@ -423,16 +441,16 @@ def rdwinselect(R, X=None, cutoff=0, obsmin=None, wmin=None, wobs=None, wstep=No
 
                 if kernel == 'triangular':
                     kweights = (1 - np.abs(Rw / wupper)) * (np.abs(Rw / wupper) <= 1)
-                    kweights[kweights == 0] = np.finfo(float).eps
+                    if p == 0:
+                        kweights[kweights == 0] = np.finfo(float).eps
                 elif kernel == 'epan':
                     kweights = 0.75 * (1 - (Rw / wupper) ** 2) * (np.abs(Rw / wupper) <= 1)
-                    kweights[kweights == 0] = np.finfo(float).eps
+                    if p == 0:
+                        kweights[kweights == 0] = np.finfo(float).eps
 
                 # Model adjustment
 
                 if p > 0:
-                    X_adj = np.empty_like(Xw)
-
                     if evalat == 'cutoff':
                         evall = cutoff
                         evalr = cutoff
@@ -441,20 +459,9 @@ def rdwinselect(R, X=None, cutoff=0, obsmin=None, wmin=None, wobs=None, wstep=No
                         evalr = np.mean(Rw[Dw == 1]) + cutoff
 
                     R_adj = Rw + cutoff - Dw * evalr - (1 - Dw) * evall
-                    Rpoly = np.polynomial.polynomial.polyvander(R_adj, deg=p)
+                    Rpoly = np.polynomial.polynomial.polyvander(R_adj, deg=p)[:, 1:]
 
-                    X_adj = np.zeros_like(Xw)
-
-                    for k in range(Xw.shape[1]):
-                        lfit_t = sm.WLS(Xw[Dw == 1, k], sm.add_constant(Rpoly[Dw == 1]), weights=kweights[Dw == 1]).fit()
-                        X_adj[Dw == 1, k] = lfit_t.resid + lfit_t.params[0]
-
-                        lfit_c = sm.WLS(Xw[Dw == 0, k], sm.add_constant(Rpoly[Dw == 0]), weights=kweights[Dw == 0]).fit()
-                        X_adj[Dw == 0, k] = lfit_c.resid + lfit_c.params[0]
-
-                        Xw = X_adj
-
-                # Statistics and p-values
+                    # Statistics and p-values
                 if statistic == 'hotelling':
                     obs_stat = hotelT2(Xw, Dw)['statistic']
                     if not approx:
@@ -469,8 +476,9 @@ def rdwinselect(R, X=None, cutoff=0, obsmin=None, wmin=None, wobs=None, wstep=No
                     table_rdw[j, 0] = p_value
                     varname = np.nan
                 else:
-                    result = rdrandinf_model(Xw, Dw, statistic=statistic, kweights=kweights, pvalue=True)
-                    obs_stat = result['statistic']
+                    if p == 0:
+                        result = rdrandinf_model(Xw, Dw, statistic=statistic, kweights=kweights, pvalue=True)
+                        obs_stat = result['statistic']
                     if not approx:
                         stat_distr = np.empty((reps, X.shape[1]))
                         for i in range(reps):
@@ -484,10 +492,8 @@ def rdwinselect(R, X=None, cutoff=0, obsmin=None, wmin=None, wobs=None, wstep=No
                         else:
                             p_value = np.zeros(X.shape[1])
                             for k in range(X.shape[1]):
-                                lfit = sm.WLS(Xw[:, k], sm.add_constant(np.column_stack((Dw, Rpoly, Dw * Rpoly))), weights=kweights).fit()
-                                tstat = lfit.params[1] / np.sqrt(lfit.cov_HC2[1, 1])
-                                p_value[k] = 2 * norm.cdf(-np.abs(tstat))
-
+                                fit = rdlocrand_hc_fit(Xw[:, k], Dw, Rpoly, kweights, vce)
+                                p_value[k] = 2*norm.cdf(-abs(fit['estimate']/fit['se']))
                     table_rdw[j, 0] = np.min(p_value)
                     tmp = np.argmin(p_value)
                     table_rdw[j, 1] = tmp
@@ -581,4 +587,8 @@ def rdwinselect(R, X=None, cutoff=0, obsmin=None, wmin=None, wobs=None, wstep=No
         'summary': table_sumstats
     }
 
+    output.update(inference)
+    output['inference'] = 'large-sample' if approx else 'randomization'
+    if p > 0 and not quietly:
+        print(f'Large-sample inference, {vce}')
     return output

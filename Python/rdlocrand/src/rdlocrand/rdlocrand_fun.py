@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import numpy as np
+import warnings
 from functools import wraps
 from inspect import signature
 from scipy.stats import norm, ks_2samp, rankdata, f
@@ -53,11 +54,19 @@ def rdlocrand_preserve_rng(func):
     def wrapper(*args, **kwargs):
         bound = func_signature.bind_partial(*args, **kwargs)
         seed = bound.arguments.get('seed', default_seed)
+        outermost = _rng_depth == 0
+        if outermost:
+            _inference_warnings.clear()
         restore_rng = rdlocrand_seed_scope(seed)
         try:
             return func(*args, **kwargs)
         finally:
             restore_rng()
+            if outermost:
+                messages = list(dict.fromkeys(_inference_warnings))
+                _inference_warnings.clear()
+                for message in messages:
+                    warnings.warn(message, UserWarning, stacklevel=2)
 
     return wrapper
 
@@ -66,9 +75,13 @@ def ksmirnov_statistic(x, y):
     x = np.asarray(x)
     y = np.asarray(y)
     values = np.sort(np.unique(np.concatenate((x, y))))
-    cdf_x = np.searchsorted(np.sort(x), values, side='right') / len(x)
-    cdf_y = np.searchsorted(np.sort(y), values, side='right') / len(y)
-    return np.max(np.abs(cdf_x - cdf_y))
+    count_x = np.searchsorted(np.sort(x), values, side='right')
+    count_y = np.searchsorted(np.sort(y), values, side='right')
+    # Compare integer CDF counts before dividing so equal KS values remain tied.
+    common = np.gcd(len(x), len(y))
+    nx = len(x) // common
+    ny = len(y) // common
+    return np.max(np.abs(count_x * ny - count_y * nx)) / (len(x) * ny)
 
 
 def ranksum_statistic(x, y):
@@ -137,7 +150,7 @@ def rdrandinf_model(Y, D, statistic, pvalue=False, kweights=None, endogtr=None, 
         for k in range(Y.shape[1]):
             if pvalue:
                 aux_ks = ks_2samp(Y[D == 0, k], Y[D == 1, k])
-                stat[k] = aux_ks.statistic
+                stat[k] = ksmirnov_statistic(Y[D == 0, k], Y[D == 1, k])
                 asy_pval[k] = aux_ks.pvalue
                 asy_power = np.nan
             else:
@@ -160,7 +173,7 @@ def rdrandinf_model(Y, D, statistic, pvalue=False, kweights=None, endogtr=None, 
         stat1 = np.mean(Y[D == 1,0]) - np.mean(Y[D == 0,0])
         if pvalue:
             aux_ks = ks_2samp(Y[D == 0,0], Y[D == 1,0])
-            stat2 = aux_ks.statistic
+            stat2 = ksmirnov_statistic(Y[D == 0,0], Y[D == 1,0])
         else:
             stat2 = ksmirnov_statistic(Y[D == 0,0], Y[D == 1,0])
         stat3 = ranksum_statistic(Y[D == 0,0], Y[D == 1,0])
@@ -373,32 +386,13 @@ def findwobs_sym(wobs, nwin, posl, posr, R, dups):
 #################################################################
 
 def find_CI(pvals, alpha, tlist):
-    if np.all(pvals >= alpha):
-        CI = np.array([[tlist[0], tlist[-1]]])
-    elif np.all(pvals < alpha):
-        CI = np.full((1, 2), np.nan)
-    else:
-        whichvec = np.where(pvals >= alpha)[0]
-        index_l = np.min(whichvec)
-        index_r = np.max(whichvec)
-        indexmat = np.array([[index_l, index_r]])
+    pvals, tlist = np.asarray(pvals), np.asarray(tlist)
+    accepted = np.flatnonzero(pvals >= alpha)
+    if len(accepted) == 0:
+        return np.full((1, 2), np.nan)
+    groups = np.split(accepted, np.flatnonzero(np.diff(accepted) != 1)+1)
+    return np.array([[tlist[g[0]], tlist[g[-1]]] for g in groups])
 
-        whichvec_cut = whichvec.copy()
-        dif = np.diff(whichvec_cut)
-        while np.all(dif == 1) is False:
-            cut = np.min(np.where(dif != 1))
-            auxvec = whichvec_cut[:cut + 1]
-            indexmat = np.vstack((indexmat, [np.min(auxvec), np.max(auxvec)]))
-            whichvec_cut = whichvec_cut[cut + 1:]
-
-            dif = np.diff(whichvec_cut)
-
-        if indexmat.shape[0] > 1:
-            indexmat = indexmat[1:, :]
-            indexmat = np.vstack((indexmat, [np.min(whichvec_cut), np.max(whichvec_cut)]))
-        CI = np.array([[tlist[i] for i in indexmat[0]]])
-
-    return CI
 
 #################################################################
 # Find window length - DEPRECATED: for backward compatibility
@@ -428,3 +422,57 @@ def findstep(R, D, obsmin, obsstep, times):
         S.append(Snext)
     step = max(S)
     return step
+
+
+_inference_warnings = []
+
+
+def rdlocrand_inference(p, statistic, vce='HC3', unavailable=None, context=None):
+    if not np.isscalar(p) or not np.isfinite(p) or p < 0 or p != int(p):
+        raise ValueError('p must be a nonnegative integer')
+    if not isinstance(vce, str) or vce.upper() not in ('HC1', 'HC2', 'HC3'):
+        raise ValueError('vce must be HC1, HC2, or HC3')
+    requested = int(p)
+    if unavailable is None and statistic in ('ksmirnov', 'ranksum', 'all', 'hotelling'):
+        unavailable = 'statistic=' + statistic
+    if p > 0 and unavailable is not None:
+        _inference_warnings.append(
+            ('' if context is None else context+': ') + f'Polynomial adjustment is unavailable for {unavailable}. Requested p={p}; '
+            'results were computed with p=0, without polynomial adjustment.')
+        p = 0
+    return {'p.requested': requested, 'p': int(p), 'vce': vce.upper() if p > 0 else None}
+
+
+def rdlocrand_hc_fit(y, d, powers, weights, vce, treatment=None):
+    """Weighted OLS/IV sandwich; IV uses structural residuals and projected leverage."""
+    use = np.asarray(weights) > 0
+    y = np.asarray(y)[use]
+    d = np.asarray(d)[use]
+    powers = np.asarray(powers)[use]
+    weights = np.asarray(weights)[use]
+    z = np.column_stack((np.ones(len(y)), d, powers, d[:, None]*powers))
+    x = z.copy()
+    if treatment is not None:
+        x[:, 1] = np.asarray(treatment)[use]
+    zw = z * np.sqrt(weights[:, None])
+    if len(y) <= z.shape[1] or np.linalg.matrix_rank(zw) < z.shape[1]:
+        raise ValueError('Polynomial regression needs more observations and distinct scores than fitted coefficients.')
+    projected = x if treatment is None else z @ np.linalg.lstsq(zw, x*np.sqrt(weights[:, None]), rcond=None)[0]
+    xw = projected*np.sqrt(weights[:, None])
+    if np.linalg.matrix_rank(xw) < xw.shape[1]:
+        raise ValueError('TSLS polynomial regression is not identified.')
+    fit = sm.WLS(y, projected, weights=weights).fit()
+    bread = fit.normalized_cov_params
+    leverage = np.sum((xw @ bread)*xw, axis=1)
+    if vce != 'HC1' and np.any(1-leverage <= 1e-10):
+        raise ValueError('HC2/HC3 is undefined for a polynomial fit with unit leverage.')
+    residual = y-x @ fit.params
+    if vce == 'HC1':
+        scale = np.sqrt(len(y)/(len(y)-x.shape[1]))
+    elif vce == 'HC2':
+        scale = 1/np.sqrt(1-leverage)
+    else:
+        scale = 1/(1-leverage)
+    influence = (projected @ bread[:, 1])*weights*residual*scale
+    return {'estimate': float(fit.params[1]), 'se': float(np.linalg.norm(influence)),
+            'coefficients': fit.params}

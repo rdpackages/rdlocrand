@@ -70,11 +70,18 @@ A list containing:
 included when \code{bound = "lower"} or \code{bound = "both"}.}
 \item{upper.bound}{matrix of upper-bound p-values for each gamma-window pair;
 included when \code{bound = "upper"} or \code{bound = "both"}.}
+
+\item{p.requested, p}{requested and effective polynomial degrees.}
 }
 \description{
 \code{rdrbounds} calculates lower and upper bounds for the
  randomization p-value under different degrees of departure from a
  local randomized experiment, as suggested by Rosenbaum (2002).
+}
+\details{
+Polynomial adjustment is unavailable for Rosenbaum bounds. A positive p is
+replaced by \code{p = 0} and a warning is issued at the end. The bounds are computed
+without polynomial adjustment.
 }
 \examples{
 # Toy dataset

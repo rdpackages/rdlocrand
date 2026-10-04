@@ -1,5 +1,5 @@
 {smcl}
-{* *! version 2.0 14May2026}{...}
+{* *! version 3.0 04Oct2026}{...}
 {viewerjumpto "Syntax" "rdwinselect##syntax"}{...}
 {viewerjumpto "Description" "rdwinselect##description"}{...}
 {viewerjumpto "Options" "rdwinselect##options"}{...}
@@ -29,6 +29,7 @@
 {cmd:{opt dropmiss:ing}}
 {cmd:{opt stat:istic}(}{it:stat_name}{cmd:)} 
 {cmd:p(}{it:#}{cmd:)}
+{cmd:vce(}{it:hc1|hc2|hc3}{cmd:)}
 {cmd:evalat(}{it:point}{cmd:)}
 {cmd:kernel(}{it:kerneltype}{cmd:)}
 {cmd:{opt approx:imate}}
@@ -62,6 +63,8 @@ for an introduction to this methodology.{p_end}
 
 {p 8 8}{browse "https://rdpackages.github.io/":https://rdpackages.github.io/}{p_end}
 
+
+{p 4 8}With {cmd:p()} greater than zero, mean balance tests use large-sample normal inference from the full polynomial regression, with HC3 standard errors by default, regardless of {cmd:approximate}. For ksmirnov, ranksum, or hotelling, a positive p is replaced by {cmd:p(0)} and a warning is issued at the end. Inference with {cmd:p(0)} is unchanged.{p_end}
 
 {marker options}{...}
 {title:Options}
@@ -104,6 +107,8 @@ Default is {cmd:nwindows(10)}.{p_end}
 
 {p 4 8}{cmd:p(}{it:#}{cmd:)} specifies the order of the polynomial for outcome adjustment model.
 Default is {cmd:p(0)}.{p_end}
+
+{p 4 8}{cmd:vce(}{it:hc1|hc2|hc3}{cmd:)} selects the heteroskedasticity-consistent variance estimator for {cmd:p()} greater than zero. Default is {cmd:vce(hc3)}. Ignored when {cmd:p(0)}.{p_end}
 
 {p 4 8}{cmd:evalat(}{it:point}{cmd:)} specifies the point at which the adjusted variable is evaluated. Allowed options are {cmd:cutoff} and {cmd:means}. Default is {cmd:evalat(cutoff)}.
 
@@ -172,6 +177,8 @@ This option is deprecated and only included for backward compatibility. We recom
 
 {synoptset 20 tabbed}{...}
 {p2col 5 20 24 2: Scalars}{p_end}
+{synopt:{cmd:r(p_requested)}} requested polynomial degree{p_end}
+{synopt:{cmd:r(p)}} effective polynomial degree{p_end}
 {synopt:{cmd:r(minp)}} minimum p-value from covariate test{p_end}
 {synopt:{cmd:r(N)}} sample size in recommended window {p_end}
 {synopt:{cmd:r(N_left)}} sample size in recommended window to the left of the cutoff{p_end}
@@ -186,13 +193,14 @@ This option is deprecated and only included for backward compatibility. We recom
 
 {synoptset 20 tabbed}{...}
 {p2col 5 20 24 2: Locals}{p_end}
+{synopt:{cmd:r(vce)}} HC estimator when the effective polynomial degree is positive{p_end}
 {synopt:{cmd:r(seed)}} seed used in permutations {p_end}
 
 {synoptset 20 tabbed}{...}
 {p2col 5 20 24 2: Matrices}{p_end}
 {synopt:{cmd:r(wlist_left)}} matrix with left endpoints of candidate windows{p_end}
 {synopt:{cmd:r(wlist_right)}} matrix with right endpoints of candidate windows{p_end}
-{synopt:{cmd:r(results)}} matrix containing the minimum covariate-balance p-value, selected covariate index, binomial-test p-value, sample sizes, and window endpoints for each candidate window{p_end}
+{synopt:{cmd:r(results)}} matrix containing the minimum covariate-balance p-value, binomial-test p-value, sample sizes, and window endpoints for each candidate window{p_end}
 
 		
 {marker references}{...}

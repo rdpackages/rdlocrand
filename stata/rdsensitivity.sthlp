@@ -1,5 +1,5 @@
 {smcl}
-{* *! version 2.0 14May2026}{...}
+{* *! version 3.0 04Oct2026}{...}
 {viewerjumpto "Syntax" "rdsensitivity##syntax"}{...}
 {viewerjumpto "Description" "rdsensitivity##description"}{...}
 {viewerjumpto "Options" "rdsensitivity##options"}{...}
@@ -24,6 +24,7 @@
 {cmd:tlist(}{it:numlist}{cmd:)} 
 {cmd:{opt stat:istic}(}{it:stat_name}{cmd:)} 
 {cmd:p(}{it:#}{cmd:)} 
+{cmd:vce(}{it:hc1|hc2|hc3}{cmd:)}
 {cmd:evalat(}{it:point}{cmd:)}
 {cmd:kernel(}{it:kerneltype}{cmd:)}
 {cmd:fuzzy(}{it:fuzzy_var [fuzzy_stat]}{cmd:)}
@@ -60,6 +61,8 @@ for an introduction to this methodology.{p_end}
 {p 8 8}{browse "https://rdpackages.github.io/":https://rdpackages.github.io/}{p_end}
 
 
+{p 4 8}With {cmd:p()} greater than zero, the grid contains large-sample normal p-values for mean contrasts or fuzzy Anderson-Rubin tests, with HC3 standard errors by default. Supply tlist explicitly; confidence sets invert these tests over the supplied grid. For ksmirnov or ranksum, a positive p is replaced by {cmd:p(0)} and a warning is issued at the end. Inference with {cmd:p(0)} is unchanged.{p_end}
+
 {marker options}{...}
 {title:Options}
 
@@ -89,6 +92,8 @@ asymptotic confidence interval for a constant treatment effect in the smallest w
 
 {p 4 8}{cmd:p(}{it:#}{cmd:)} specifies the order of the polynomial for outcome adjustment model.
 Default is {cmd:p(0)}.{p_end}
+
+{p 4 8}{cmd:vce(}{it:hc1|hc2|hc3}{cmd:)} selects the heteroskedasticity-consistent variance estimator for {cmd:p()} greater than zero. Default is {cmd:vce(hc3)}. Ignored when {cmd:p(0)}.{p_end}
 
 {p 4 8}{cmd:evalat(}{it:point}{cmd:)} specifies the point at which the adjusted variable is evaluated. Allowed options are {cmd:cutoff} and {cmd:means}. Default is {cmd:evalat(cutoff)}.
 
@@ -151,6 +156,14 @@ Default is {cmd:seed(666)}.{p_end}
 {p 4 8}{cmd:rdsensitivity} saves the following in {cmd:r()}:
 
 {synoptset 20 tabbed}{...}
+{p2col 5 20 24 2: Scalars}{p_end}
+{synopt:{cmd:r(p_requested)}} requested polynomial degree{p_end}
+{synopt:{cmd:r(p)}} effective polynomial degree{p_end}
+
+{synoptset 20 tabbed}{...}
+{p2col 5 20 24 2: Locals}{p_end}
+{synopt:{cmd:r(vce)}} HC estimator when the effective polynomial degree is positive{p_end}
+
 {p2col 5 20 24 2: Matrices}{p_end}
 {synopt:{cmd:r(results)}} matrix of p-values.{p_end}
 {synopt:{cmd:r(CI)}} confidence interval matrix (if {cmd:ci} option is specified).{p_end}

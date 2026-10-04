@@ -1,5 +1,6 @@
 v 3
 d STATA Package: RDLOCRAND
+d Version: 3.0
 d 
 d Authors: Matias D. Cattaneo, Department of Operations Research and Financial Engineering, Princeton University, matias.d.cattaneo@gmail.com
 d          Rocio Titiunik, Department of Politics, Princeton University, rocio.titiunik@gmail.com
@@ -8,7 +9,7 @@ d
 d Website: https://rdpackages.github.io/
 d Repository: https://github.com/rdpackages/rdlocrand
 d
-d Distribution-Date: 20260527
+d Distribution-Date: 20261004
 d 
 f rdwinselect.ado
 f rdwinselect.sthlp
@@ -23,6 +24,5 @@ f rdwinselect_allcovs.ado
 f lrdlocrand.mlib
 f rdlocrand_illustration.do
 f rdlocrand_senate.dta
-
-
-
+f rdlocrand_inference.ado
+f rdlocrand_hc.ado

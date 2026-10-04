@@ -1,6 +1,6 @@
 ###############################################################################
 # rdrandinf: randomization inference in RD window
-# !version 2.0 14-May-2026
+# !version 3.0 04-Oct-2026
 # Authors: Matias Cattaneo, Rocio Titiunik, Gonzalo Vazquez-Bare
 ###############################################################################
 
@@ -40,7 +40,7 @@
 #' @param nulltau the value of the treatment effect under the null hypothesis (default is 0).
 #' @param d the effect size for asymptotic power calculation. Default is 0.5 times the standard deviation of the outcome variable for the control group.
 #' @param dscale the fraction of the standard deviation of the outcome variable for the control group used as the alternative hypothesis for asymptotic power calculation. Default is 0.5.
-#' @param ci calculates a confidence interval for the treatment effect by test inversion. \code{ci} can be specified as a scalar or a vector, where the first element indicates the value of alpha for the confidence interval (typically 0.05 or 0.01) and the remaining elements, if specified, indicate the grid of treatment effects to be evaluated. This option uses \code{rdsensitivity} to calculate the confidence interval. See the corresponding help file for details. Note: the default tlist can be narrow in some cases, which may truncate the confidence interval. We recommend manually setting a large enough tlist.
+#' @param ci calculates a confidence interval for the treatment effect. The first element specifies alpha (typically 0.05 or 0.01); remaining elements specify a treatment-effect grid. TSLS uses normal intervals. Polynomial sharp-design mean contrasts use normal intervals unless a grid is supplied. Other cases invert tests over a grid; polynomial fuzzy Anderson-Rubin requires an explicit grid. At \code{p = 0}, test inversion uses \code{rdsensitivity}. Use a sufficiently wide grid to avoid truncating the confidence set.
 #' @param interfci the level for Rosenbaum's confidence interval under arbitrary interference between units.
 #' @param bernoulli the probabilities of treatment for each unit when assignment mechanism is a Bernoulli trial. This option should be specified as a vector of length equal to the length of the outcome and running variables.
 #' @param reps the number of replications (default is 1000).
@@ -63,16 +63,34 @@
 #' @param firststage reports the results from the first step when using tsls.
 #' @param obsstep the minimum number of observations to be added on each side of the cutoff for the sequence of fixed-increment nested windows. Default is 2. This option is deprecated and only included for backward compatibility.
 #'
+#' @param vce heteroskedasticity-consistent variance estimator for \code{p > 0}: \code{HC1}, \code{HC2}, or \code{HC3} (default). Ignored when \code{p = 0}.
+#'
+#' @details
+#' With \code{p > 0}, mean contrasts, fuzzy Anderson-Rubin tests, and fuzzy TSLS/Wald
+#' use large-sample normal inference from the full polynomial regression, with
+#' HC3 standard errors by default; no randomization p-value is computed.
+#' HC3 does not guarantee finite-sample size control; TSLS/Wald also requires a sufficiently strong first stage.
+#' TSLS uses structural residuals and leverage from projected second-stage regressors.
+#' Fuzzy Anderson-Rubin confidence sets require an explicit treatment-effect grid in ci.
+#' For ksmirnov, ranksum, all, or interfci, a positive p is replaced by \code{p = 0}
+#' and a warning is issued at the end. With \code{p = 0}, existing inference methods
+#' and variance defaults are retained; TSLS tests honor \code{nulltau} and the requested CI level.
+#'
 #' @return
 #' A list containing:
 #' \item{sumstats}{matrix of full-sample and window-specific summary statistics.}
 #' \item{obs.stat}{observed statistic or statistics.}
-#' \item{p.value}{randomization p-value or p-values.}
+#' \item{p.value}{randomization p-value or p-values; \code{NA} when \code{p > 0}.}
 #' \item{asy.pvalue}{asymptotic p-value or p-values.}
 #' \item{window}{chosen window endpoints.}
 #' \item{ci}{confidence interval; included only when \code{ci} is specified.}
 #' \item{interf.ci}{confidence interval under interference; included only when
 #' \code{interfci} is specified.}
+#'
+#' \item{p.requested, p}{requested and effective polynomial degrees.}
+#' \item{vce}{HC variance estimator; \code{NA} when \code{p = 0}.}
+#' \item{inference}{inference method used.}
+#' \item{se}{standard error; included when the effective \code{p > 0}.}
 #'
 #' @examples
 #' # Toy dataset
@@ -129,12 +147,15 @@ rdrandinf <- function(Y,R,
                       level = .15,
                       plot = FALSE,
                       firststage = FALSE,
-                      obsstep = NULL){
+                      obsstep = NULL, vce = "HC3"){
 
 
   ###############################################################################
   # Parameters and error checking
   ###############################################################################
+
+  finish_inference <- rdlocrand_inference_scope()
+  on.exit(finish_inference(), add = TRUE)
 
   randmech <- 'fixed margins'
 
@@ -146,13 +167,24 @@ rdrandinf <- function(Y,R,
       fuzzy.stat <- 'ar'
       fuzzy.tr <- fuzzy
     } else {
-      fuzzy.tr <- as.numeric(fuzzy[-length(fuzzy)])
-      if (fuzzy[length(fuzzy)]=='ar' | fuzzy[length(fuzzy)]=='itt') fuzzy.stat <- 'ar'
-      else if (fuzzy[length(fuzzy)]=='tsls') fuzzy.stat <- 'wald'
-      else {stop('fuzzy statistic not valid')}
+      if (is.list(fuzzy) && length(fuzzy) == 2L) {
+        fuzzy.tr <- as.numeric(fuzzy[[1]])
+        fuzzy.method <- as.character(fuzzy[[2]])
+      } else {
+        fuzzy.tr <- as.numeric(fuzzy[-length(fuzzy)])
+        fuzzy.method <- as.character(fuzzy[length(fuzzy)])
+      }
+      if (length(fuzzy.method) != 1L || is.na(fuzzy.method)) stop('fuzzy statistic not valid')
+      if (fuzzy.method %in% c('ar', 'itt')) fuzzy.stat <- 'ar'
+      else if (fuzzy.method == 'tsls') fuzzy.stat <- 'wald'
+      else stop('fuzzy statistic not valid')
     }
   }
   else{fuzzy.stat  <- ''}
+  inference <- rdlocrand_inference(p, statistic, vce,
+                                   if (!is.null(interfci)) 'interfci' else NULL)
+  p <- inference$p
+  if (p > 0) vce <- inference$vce
 
   if(is.null(fuzzy)){
     if(is.null(bernoulli)){
@@ -169,7 +201,7 @@ rdrandinf <- function(Y,R,
     }
   }
   else {
-    if(missing(bernoulli)){
+    if(is.null(bernoulli)){
       data <- cbind(Y,R,fuzzy.tr)
       data <- data[complete.cases(data),]
       Y <- data[,1]
@@ -205,7 +237,7 @@ rdrandinf <- function(Y,R,
   if (kernel!='uniform' & !is.null(evall) & !is.null(evalr)){
     if (evall!=cutoff | evalr!=cutoff) stop('kernel only allowed when evall=evalr=cutoff')
   }
-  if (kernel!='uniform' & statistic!='ttest' & statistic!='diffmeans') stop('kernel only allowed for diffmeans')
+  if (kernel!='uniform' & statistic!='ttest' & statistic!='diffmeans' & is.null(fuzzy)) stop('kernel only allowed for diffmeans')
   if (!missing(ci)){if (ci[1]>1 | ci[1]<0) stop('ci must be in [0,1]')}
   if (!is.null(interfci)){
     if (interfci>1 | interfci<0) stop('interfci must be in [0,1]')
@@ -251,7 +283,7 @@ rdrandinf <- function(Y,R,
       if (quietly==FALSE) cat('\nRunning rdwinselect...\n')
       rdwlength <- rdwinselect(Rc.long,covariates,obsmin=obsmin,obsstep=obsstep,wmin=wmin,wstep=wstep,wobs=wobs,
                                wasymmetric=wasymmetric,wmasspoints=wmasspoints,dropmissing=dropmissing,nwindows=nwindows,
-                               statistic=rdwstat,approx=approx,reps=rdwreps,plot=plot,level=level,seed=seed,quietly=TRUE)
+                               statistic=rdwstat,p=p,vce=vce,approx=approx,reps=rdwreps,plot=plot,level=level,seed=seed,quietly=TRUE)
       wl <- cutoff + rdwlength$w_left
       wr <- cutoff + rdwlength$w_right
       if (quietly==FALSE) cat('\nrdwinselect complete.\n')
@@ -352,10 +384,7 @@ rdrandinf <- function(Y,R,
     }
     R.adj <- Rw + cutoff - Dw*evalr - (1-Dw)*evall
     Rpoly <- poly(R.adj,order=p,raw=TRUE)
-    lfit.t <- lm(Yw[Dw==1] ~ Rpoly[Dw==1,],weights=kweights[Dw==1])
-    Y.adj[Dw==1] <- lfit.t$residuals + lfit.t$coefficients[1]
-    lfit.c <- lm(Yw[Dw==0] ~ Rpoly[Dw==0,],weights=kweights[Dw==0])
-    Y.adj[Dw==0] <- lfit.c$residuals + lfit.c$coefficients[1]
+
   }
 
   if (is.null(fuzzy)){
@@ -370,23 +399,24 @@ rdrandinf <- function(Y,R,
   ###############################################################################
 
 
-  if (is.null(fuzzy)){
-    results <- rdrandinf.model(Y.adj.null,Dw,statistic=statistic,pvalue=TRUE,kweights=kweights,delta=delta)
-  } else {
-    results <- rdrandinf.model(Y.adj.null,Dw,statistic=fuzzy.stat,endogtr=Tw,pvalue=TRUE,kweights=kweights,delta=delta)
-  }
-
-  obs.stat <- as.numeric(results$statistic)
-
   if (p==0){
+    if (is.null(fuzzy)){
+      results <- rdrandinf.model(Y.adj.null,Dw,statistic=statistic,pvalue=TRUE,kweights=kweights,delta=delta)
+    } else {
+      results <- rdrandinf.model(Y.adj.null,Dw,statistic=fuzzy.stat,endogtr=Tw,pvalue=TRUE,kweights=kweights,delta=delta)
+    }
+
+    obs.stat <- as.numeric(results$statistic)
+
     if (fuzzy.stat=='wald'){
       firststagereg <- lm(Tw ~ Dw)
       aux <- AER::ivreg(Yw ~ Tw | Dw,weights=kweights)
       obs.stat <- aux$coefficients["Tw"]
       se <- sqrt(diag(sandwich::vcovHC(aux,type='HC1'))['Tw'])
-      ci.lb <- obs.stat - 1.96*se
-      ci.ub <- obs.stat + 1.96*se
-      tstat <- aux$coefficients['Tw']/se
+      critical <- if (missing(ci)) 1.96 else stats::qnorm(1-ci[1]/2)
+      ci.lb <- obs.stat - critical*se
+      ci.ub <- obs.stat + critical*se
+      tstat <- (obs.stat-nulltau)/se
       asy.pval <- as.numeric(2*pnorm(-abs(tstat)))
       asy.power <- as.numeric(1-pnorm(1.96-delta/se)+pnorm(-1.96-delta/se))
     } else {
@@ -395,34 +425,20 @@ rdrandinf <- function(Y,R,
     }
 
   } else {
-    if (statistic=='diffmeans'|statistic=='ttest'|statistic=='all'){
-      lfit <- lm(Yw ~ Dw + Rpoly + Dw*Rpoly,weights=kweights)
-      se <- sqrt(diag(sandwich::vcovHC(lfit,type='HC2'))['Dw'])
-      tstat <- lfit$coefficients['Dw']/se
-      asy.pval <- as.numeric(2*pnorm(-abs(tstat)))
-      asy.power <- as.numeric(1-pnorm(1.96-delta/se)+pnorm(-1.96-delta/se))
+    if (fuzzy.stat == 'wald'){
+      hc <- rdlocrand_hc_fit(Yw, Dw, Rpoly, kweights, vce, Tw)
+      obs.stat <- hc$estimate
+      tstat <- (obs.stat-nulltau)/hc$se
+      firststagereg <- lm(Tw ~ Dw * Rpoly, weights=kweights)
+    } else {
+      Y.null <- Yw-nulltau*if (is.null(fuzzy)) Dw else Tw
+      hc <- rdlocrand_hc_fit(Y.null, Dw, Rpoly, kweights, vce)
+      obs.stat <- hc$estimate
+      tstat <- obs.stat/hc$se
     }
-    if (statistic=='ksmirnov'|statistic=='ranksum'){
-      asy.pval <- NA
-      asy.power <- NA
-    }
-    if (statistic=='all'){
-      asy.pval <- c(as.numeric(asy.pval),NA,NA)
-      asy.power <- c(as.numeric(asy.power),NA,NA)
-    }
-
-    if (fuzzy.stat=='wald'){
-      inter <- Rpoly*Dw
-      firststagereg <- lm(Tw ~ Dw)
-      aux <- AER::ivreg(Yw ~ Rpoly + inter + Tw | Rpoly + inter + Dw,weights=kweights)
-      obs.stat <- aux$coefficients["Tw"]
-      se <- sqrt(diag(sandwich::vcovHC(aux,type='HC1'))['Tw'])
-      ci.lb <- obs.stat - 1.96*se
-      ci.ub <- obs.stat + 1.96*se
-      tstat <- aux$coefficients['Tw']/se
-      asy.pval <- as.numeric(2*pnorm(-abs(tstat)))
-      asy.power <- as.numeric(1-pnorm(1.96-delta/se)+pnorm(-1.96-delta/se))
-    }
+    se <- hc$se
+    asy.pval <- as.numeric(2*pnorm(-abs(tstat)))
+    asy.power <- as.numeric(1-pnorm(1.96-delta/se)+pnorm(-1.96-delta/se))
   }
 
 
@@ -437,9 +453,9 @@ rdrandinf <- function(Y,R,
     stats.distr <- array(NA,dim=c(reps,1))
   }
 
-  if (quietly==FALSE){cat('\nRunning randomization-based test...\n')}
+  if (quietly==FALSE && p==0 && fuzzy.stat!='wald'){cat('\nRunning randomization-based test...\n')}
 
-  if (fuzzy.stat!='wald'){
+  if (p==0 && fuzzy.stat!='wald'){
     if (is.null(bernoulli)){
 
       max.reps <- choose(n.w,n1.w)
@@ -492,19 +508,35 @@ rdrandinf <- function(Y,R,
 
   if (!missing(ci)){
     ci.alpha <- ci[1]
-    if (fuzzy.stat!='wald'){
+    if (p > 0){
+      if (length(ci) > 1 && fuzzy.stat != 'wald'){
+        grid <- sort(unique(ci[-1]))
+        pv <- vapply(grid, function(tau){
+          yy <- Yw-tau*if (is.null(fuzzy)) Dw else Tw
+          fit <- rdlocrand_hc_fit(yy, Dw, Rpoly, kweights, vce)
+          2*pnorm(-abs(fit$estimate/fit$se))
+        }, numeric(1))
+        conf.int <- find_CI(pv, ci.alpha, grid)
+      } else if (fuzzy.stat == 'ar'){
+        stop('For fuzzy Anderson-Rubin confidence sets, supply the treatment-effect grid in ci.', call. = FALSE)
+      } else {
+        estimate <- obs.stat + if (fuzzy.stat == 'wald') 0 else nulltau
+        conf.int <- matrix(estimate + c(-1,1)*stats::qnorm(1-ci.alpha/2)*se, nrow=1)
+      }
+      ci.lb <- conf.int[1,1]; ci.ub <- conf.int[1,2]
+    } else if (fuzzy.stat!='wald'){
 
       wr_c <- wr - cutoff
       wl_c <- wl - cutoff
 
       if (length(ci)>1){
         tlist <- ci[-1]
-        aux <- rdsensitivity(Y,Rc,p=p,wlist=wr_c,wlist_left=wl_c,tlist=tlist,fuzzy=fuzzy,ci=c(wl_c,wr_c),ci_alpha=ci.alpha,
-                             reps=reps,quietly=quietly,seed=seed,nodraw=TRUE)
+        aux <- rdsensitivity(Y,Rc,p=p,wlist=wr_c,wlist_left=wl_c,tlist=tlist,fuzzy=if (is.null(fuzzy)) NULL else fuzzy.tr,ci=c(wl_c,wr_c),ci_alpha=ci.alpha,
+                             statistic=statistic,kernel=kernel,vce=vce,reps=reps,quietly=quietly,seed=seed,nodraw=TRUE)
 
       } else {
-        aux <- rdsensitivity(Y,Rc,p=p,wlist=wr_c,wlist_left=wl_c,fuzzy=fuzzy,ci=c(wl_c,wr_c),ci_alpha=ci.alpha,
-                             reps=reps,quietly=quietly,seed=seed,nodraw=TRUE)
+        aux <- rdsensitivity(Y,Rc,p=p,wlist=wr_c,wlist_left=wl_c,fuzzy=if (is.null(fuzzy)) NULL else fuzzy.tr,ci=c(wl_c,wr_c),ci_alpha=ci.alpha,
+                             statistic=statistic,kernel=kernel,vce=vce,reps=reps,quietly=quietly,seed=seed,nodraw=TRUE)
 
       }
       conf.int <- aux$ci
@@ -585,14 +617,18 @@ rdrandinf <- function(Y,R,
     cat(format(sprintf('%6.0f',p),       width = 14, justify='right')); cat("\n")
     cat(format('Kernel type       =',    width = 18))
     cat(format(kernel,                   width = 14, justify='right')); cat("\n")
+    if (p == 0){
     cat(format('Reps              =',    width = 18))
     cat(format(sprintf('%6.0f',reps),    width = 14, justify='right')); cat("\n")
+    }
     cat(format('Window            =',    width = 18))
     cat(format(wselect,                  width = 14, justify='right')); cat("\n")
     cat(format('H0:          tau  =',    width = 18))
     cat(format(sprintf('%4.3f',nulltau), width = 14, justify='right')); cat("\n")
+    if (p == 0){
     cat(format('Randomization     =',    width = 18))
     cat(format(randmech,                 width = 14, justify='right'))
+    }
     cat('\n\n')
 
     cat(format("Cutoff c = ",           width = 10))
@@ -629,6 +665,11 @@ rdrandinf <- function(Y,R,
       cat(paste0(rep('=',80),collapse='')); cat('\n')
     }
 
+    if (p > 0){
+      cat(paste0('Large-sample inference, ', vce, '\n'))
+      cat(sprintf('%19s %11s %12s %12s\n', 'Statistic', 'T', 'P>|T|', 'Std. error'))
+      cat(sprintf('%19s %11.3f %12.3f %12.3f\n', statdisp, obs.stat, asy.pval, se))
+    } else {
     cat(format('',              width = 31))
     cat(format('Finite sample', width = 20,justify='centre'))
     cat(format('Large sample',  width = 29,justify='centre'));cat('\n')
@@ -680,6 +721,7 @@ rdrandinf <- function(Y,R,
 
     }
 
+    }
     cat(paste0(rep('=',80),collapse='')); cat('\n')
 
 
@@ -708,5 +750,10 @@ rdrandinf <- function(Y,R,
       cat(paste0((1-interfci)*100,'% confidence interval under interference: [',round(interf.ci[1],3),';',round(interf.ci[2],3),']')); cat('\n')
     }
   }
+  output$p.requested <- inference$p.requested
+  output$p <- p
+  output$vce <- inference$vce
+  output$inference <- if (p > 0) 'large-sample' else if (fuzzy.stat == 'wald') 'large-sample' else 'randomization'
+  if (p > 0) output$se <- se
   return(output)
 }

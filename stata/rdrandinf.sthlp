@@ -1,5 +1,5 @@
 {smcl}
-{* *! version 2.0 14May2026}{...}
+{* *! version 3.0 04Oct2026}{...}
 {viewerjumpto "Syntax" "rdrandinf##syntax"}{...}
 {viewerjumpto "Description" "rdrandinf##description"}{...}
 {viewerjumpto "Options" "rdrandinf##options"}{...}
@@ -23,6 +23,7 @@
 {cmd:wr(}{it:#}{cmd:)} 
 {cmd:{opt stat:istic}(}{it:stat_name}{cmd:)} 
 {cmd:p(}{it:#}{cmd:)} 
+{cmd:vce(}{it:hc1|hc2|hc3}{cmd:)}
 {cmd:evall(}{it:#}{cmd:)} 
 {cmd:evalr(}{it:#}{cmd:)} 
 {cmd:kernel(}{it:kerneltype}{cmd:)} 
@@ -77,6 +78,8 @@ for an introduction to this methodology.{p_end}
 {p 8 8}{browse "https://rdpackages.github.io/":https://rdpackages.github.io/}{p_end}
 
 
+{p 4 8}With {cmd:p()} greater than zero, mean contrasts and fuzzy Anderson-Rubin and TSLS/Wald tests use normal inference from the full polynomial regression, with HC3 standard errors by default. No randomization p-value is computed. HC3 does not guarantee finite-sample size control, and TSLS/Wald requires a sufficiently strong first stage. TSLS uses structural residuals and projected-regressor leverage. Fuzzy Anderson-Rubin confidence sets require an explicit grid in {cmd:ci()}. For ksmirnov, ranksum, all, or interfci, positive p becomes {cmd:p(0)} with a final warning. At {cmd:p(0)}, existing inference methods and variance defaults are retained; TSLS honors {cmd:nulltau()} and the requested CI level.{p_end}
+
 {marker options}{...}
 {title:Options}
 
@@ -101,6 +104,8 @@ Default is {cmd:cutoff(0)}.{p_end}
 {p 4 8}{cmd:p(}{it:#}{cmd:)} specifies the order of the polynomial for outcome adjustment model.
 Default is {cmd:p(0)} (constant treatment effect model).{p_end}
 
+{p 4 8}{cmd:vce(}{it:hc1|hc2|hc3}{cmd:)} selects the heteroskedasticity-consistent variance estimator for {cmd:p()} greater than zero. Default is {cmd:vce(hc3)}. Ignored when {cmd:p(0)}.{p_end}
+
 {p 4 8}{cmd:evall(}{it:#}{cmd:)} specifies the point at the left of the cutoff at which the adjusted outcome is evaluated. Default is the cutoff value.{p_end}
 
 {p 4 8}{cmd:evalr(}{it:#}{cmd:)} specifies the point at the right of the cutoff at which the adjusted outcome is evaluated. Default is the cutoff value.{p_end}
@@ -123,10 +128,7 @@ Default is {cmd:nulltau(0)}.{p_end}
 
 {p 4 8}{cmd:dscale(}{it:#}{cmd:)} specifies the fraction of the standard deviation of the outcome variable for the control group used as the alternative hypothesis for asymptotic power calculation. Default is {cmd:dscale(.5)}.{p_end}
 
-{p 4 8}{cmd:ci(}{it:alpha [tlist]}{cmd:)} calculates a confidence interval for the treatment effect by test inversion, where {it: alpha} specifies the significance level (typically 0.05 or 0.01)
-and {it: tlist} indicates the grid of treatment effects to be evaluated.
-This option uses {cmd:rdsensitivity} to calculate the confidence interval. See {help rdsensitivity:rdsensitivity} for details.
-Note: the default tlist can be narrow in some cases, which may truncate the confidence interval. We recommend manually setting a large enough tlist.{p_end}
+{p 4 8}{cmd:ci(}{it:alpha [tlist]}{cmd:)} calculates a confidence interval for the treatment effect. {it:alpha} specifies the significance level (typically 0.05 or 0.01); {it:tlist} specifies a treatment-effect grid. TSLS uses normal intervals. Polynomial sharp-design mean contrasts use normal intervals unless a grid is supplied. Other cases invert tests over a grid; polynomial fuzzy Anderson-Rubin requires an explicit grid. At {cmd:p(0)}, test inversion uses {help rdsensitivity:rdsensitivity}. Use a sufficiently wide grid to avoid truncating the confidence set.{p_end}
 
 {p 4 8}{cmd:{opt interf:ci}(}{it:#}{cmd:)} sets the significance level (alpha) for Rosenbaum's confidence interval under arbitrary interference between units.{p_end}
 
@@ -229,20 +231,23 @@ This option is deprecated and only included for backward compatibility.{p_end}
 
 {synoptset 20 tabbed}{...}
 {p2col 5 20 24 2: Scalars}{p_end}
+{synopt:{cmd:r(p_requested)}} requested polynomial degree{p_end}
+{synopt:{cmd:r(p)}} order of polynomial in adjusted model{p_end}
+{synopt:{cmd:r(se)}} standard error when the effective polynomial degree is positive{p_end}
 {synopt:{cmd:r(wl)}} left end of window used{p_end}
 {synopt:{cmd:r(wr)}} right end of window used{p_end}
 {synopt:{cmd:r(N)}} sample size in used window{p_end}
 {synopt:{cmd:r(N_left)}} sample size in used window to the left of the cutoff {p_end}
 {synopt:{cmd:r(N_right)}} sample size in used window to the right of the cutoff {p_end}
-{synopt:{cmd:r(p)}} order of polynomial in adjusted model{p_end}
 {synopt:{cmd:r(obs_stat)}} observed statistic{p_end}
-{synopt:{cmd:r(randpval)}} randomization p-value{p_end}
+{synopt:{cmd:r(randpval)}} randomization p-value; missing when the effective polynomial degree is positive{p_end}
 {synopt:{cmd:r(asy_pval)}} asymptotic p-value{p_end}
 {synopt:{cmd:r(int_lb)}} lower limit of confidence interval under interference (if {cmd:interfci} option is specified) {p_end}
 {synopt:{cmd:r(int_ub)}} upper limit of confidence interval under interference (if {cmd:interfci} option is specified) {p_end}
 
 {synoptset 20 tabbed}{...}
 {p2col 5 20 24 2: Locals}{p_end}
+{synopt:{cmd:r(vce)}} HC estimator when the effective polynomial degree is positive{p_end}
 {synopt:{cmd:r(seed)}} seed used in permutations {p_end}
 
 {synoptset 20 tabbed}{...}

@@ -40,7 +40,8 @@ rdrandinf(
   level = 0.15,
   plot = FALSE,
   firststage = FALSE,
-  obsstep = NULL
+  obsstep = NULL,
+  vce = "HC3"
 )
 }
 \arguments{
@@ -72,7 +73,7 @@ rdrandinf(
 
 \item{dscale}{the fraction of the standard deviation of the outcome variable for the control group used as the alternative hypothesis for asymptotic power calculation. Default is 0.5.}
 
-\item{ci}{calculates a confidence interval for the treatment effect by test inversion. \code{ci} can be specified as a scalar or a vector, where the first element indicates the value of alpha for the confidence interval (typically 0.05 or 0.01) and the remaining elements, if specified, indicate the grid of treatment effects to be evaluated. This option uses \code{rdsensitivity} to calculate the confidence interval. See the corresponding help file for details. Note: the default tlist can be narrow in some cases, which may truncate the confidence interval. We recommend manually setting a large enough tlist.}
+\item{ci}{calculates a confidence interval for the treatment effect. The first element specifies alpha (typically 0.05 or 0.01); remaining elements specify a treatment-effect grid. TSLS uses normal intervals. Polynomial sharp-design mean contrasts use normal intervals unless a grid is supplied. Other cases invert tests over a grid; polynomial fuzzy Anderson-Rubin requires an explicit grid. At \code{p = 0}, test inversion uses \code{rdsensitivity}. Use a sufficiently wide grid to avoid truncating the confidence set.}
 
 \item{interfci}{the level for Rosenbaum's confidence interval under arbitrary interference between units.}
 
@@ -115,22 +116,40 @@ rdrandinf(
 \item{firststage}{reports the results from the first step when using tsls.}
 
 \item{obsstep}{the minimum number of observations to be added on each side of the cutoff for the sequence of fixed-increment nested windows. Default is 2. This option is deprecated and only included for backward compatibility.}
+
+\item{vce}{heteroskedasticity-consistent variance estimator for \code{p > 0}: \code{HC1}, \code{HC2}, or \code{HC3} (default). Ignored when \code{p = 0}.}
 }
 \value{
 A list containing:
 \item{sumstats}{matrix of full-sample and window-specific summary statistics.}
 \item{obs.stat}{observed statistic or statistics.}
-\item{p.value}{randomization p-value or p-values.}
+\item{p.value}{randomization p-value or p-values; \code{NA} when \code{p > 0}.}
 \item{asy.pvalue}{asymptotic p-value or p-values.}
 \item{window}{chosen window endpoints.}
 \item{ci}{confidence interval; included only when \code{ci} is specified.}
 \item{interf.ci}{confidence interval under interference; included only when
 \code{interfci} is specified.}
+
+\item{p.requested, p}{requested and effective polynomial degrees.}
+\item{vce}{HC variance estimator; \code{NA} when \code{p = 0}.}
+\item{inference}{inference method used.}
+\item{se}{standard error; included when the effective \code{p > 0}.}
 }
 \description{
 \code{rdrandinf} implements randomization inference and related methods for RD designs,
 using observations in a specified or data-driven selected window around the cutoff where
 local randomization is assumed to hold.
+}
+\details{
+With \code{p > 0}, mean contrasts, fuzzy Anderson-Rubin tests, and fuzzy TSLS/Wald
+use large-sample normal inference from the full polynomial regression, with
+HC3 standard errors by default; no randomization p-value is computed.
+HC3 does not guarantee finite-sample size control; TSLS/Wald also requires a sufficiently strong first stage.
+TSLS uses structural residuals and leverage from projected second-stage regressors.
+Fuzzy Anderson-Rubin confidence sets require an explicit treatment-effect grid in ci.
+For ksmirnov, ranksum, all, or interfci, a positive p is replaced by \code{p = 0}
+and a warning is issued at the end. With \code{p = 0}, existing inference methods
+and variance defaults are retained; TSLS tests honor \code{nulltau} and the requested CI level.
 }
 \examples{
 # Toy dataset

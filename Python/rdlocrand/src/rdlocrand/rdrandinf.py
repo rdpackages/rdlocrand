@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import numpy as np
+from rdlocrand.rdlocrand_fun import rdlocrand_inference, rdlocrand_hc_fit
 from scipy.stats import norm
 import statsmodels.api as sm
 from scipy.special import comb
@@ -14,7 +15,7 @@ def rdrandinf(Y, R, cutoff=0, wl=None, wr=None, statistic='diffmeans', p=0, eval
               fuzzy=None, nulltau=0, d=None, dscale=None, ci=None, interfci=None, bernoulli=None, reps=1000, seed=666,
               quietly=False, covariates=None, obsmin=None, wmin=None, wobs=None, wstep=None, wasymmetric=False,
               wmasspoints=False, nwindows=10, dropmissing=False, rdwstat='diffmeans', approx=False, rdwreps=1000,
-              level=0.15, plot=False, firststage=False, obsstep=None):
+              level=0.15, plot=False, firststage=False, obsstep=None, vce='HC3'):
     
     """
     Randomization Inference for RD Designs under Local Randomization
@@ -46,6 +47,17 @@ def rdrandinf(Y, R, cutoff=0, wl=None, wr=None, statistic='diffmeans', p=0, eval
     A Reexamination of the Effect of Head Start on Child Mortality.
     Journal of Policy Analysis and Management 36(3): 643-681.
     URL: https://rdpackages.github.io/references/Cattaneo-Titiunik-VazquezBare_2017_JPAM.pdf
+
+    Notes:
+    With p > 0, mean contrasts, fuzzy Anderson-Rubin tests, and fuzzy TSLS/Wald
+    use large-sample normal inference from the full polynomial regression, with
+    HC3 standard errors by default; no randomization p-value is computed.
+    HC3 does not guarantee finite-sample size control; TSLS/Wald also requires a sufficiently strong first stage.
+    TSLS uses structural residuals and leverage from projected second-stage regressors.
+    Fuzzy Anderson-Rubin confidence sets require an explicit treatment-effect grid in ci.
+    For ksmirnov, ranksum, all, or interfci, a positive p is replaced by p = 0
+    and a warning is issued at the end. With p = 0, existing inference methods
+    and variance defaults are retained; TSLS tests honor nulltau and the requested CI level.
 
     Parameters:
     -----------
@@ -86,12 +98,11 @@ def rdrandinf(Y, R, cutoff=0, wl=None, wr=None, statistic='diffmeans', p=0, eval
         The fraction of the standard deviation of the outcome variable for the control group used as an alternative hypothesis
         for asymptotic power calculation. Default is 0.5.
     ci : float or array-like, optional
-        Calculates a confidence interval for the treatment effect by test inversion. ci can be specified as a scalar or a vector,
-        where the first element indicates the value of alpha for the confidence interval (typically 0.05 or 0.01),
-        and the remaining elements, if specified, indicate the grid of treatment effects to be evaluated.
-        This option uses rdsensitivity to calculate the confidence interval. See the corresponding help file for details.
-        Note: the default tlist can be narrow in some cases, which may truncate the confidence interval.
-        We recommend manually setting a large enough tlist.
+        Calculates a confidence interval for the treatment effect. The first element specifies alpha
+        (typically 0.05 or 0.01); remaining elements specify a treatment-effect grid. TSLS uses normal
+        intervals. Polynomial sharp-design mean contrasts use normal intervals unless a grid is supplied.
+        Other cases invert tests over a grid; polynomial fuzzy Anderson-Rubin requires an explicit grid.
+        At p = 0, test inversion uses rdsensitivity. Use a sufficiently wide grid to avoid truncating the confidence set.
     interfci : float, optional
         The level for Rosenbaum's confidence interval under arbitrary interference between units.
     bernoulli : array-like, optional
@@ -145,6 +156,10 @@ def rdrandinf(Y, R, cutoff=0, wl=None, wr=None, statistic='diffmeans', p=0, eval
         The minimum number of observations to be added on each side of the cutoff for the sequence of fixed-increment nested windows.
         Default is 2. This option is deprecated and only included for backward compatibility.
     
+    vce : str, optional
+        Variance estimator for p > 0: 'HC1', 'HC2', or 'HC3' (default).
+        Ignored when p = 0.
+
     Returns
     -------
     dict
@@ -152,12 +167,16 @@ def rdrandinf(Y, R, cutoff=0, wl=None, wr=None, statistic='diffmeans', p=0, eval
 
         - ``sumstats``: full-sample and window-specific summary statistics.
         - ``obs.stat``: observed statistic or statistics.
-        - ``p.value``: randomization p-value or p-values.
+        - ``p.value``: randomization p-value or p-values; NaN when p > 0.
         - ``asy.pvalue``: asymptotic p-value or p-values.
         - ``window``: chosen window endpoints.
         - ``ci``: confidence interval; included only when ``ci`` is specified.
         - ``interf.ci``: confidence interval under interference; included only
           when ``interfci`` is specified.
+        - ``p.requested``, ``p``: requested and effective polynomial degrees.
+        - ``vce``: HC estimator, or None when p = 0.
+        - ``inference``: inference method used.
+        - ``se``: standard error when the effective p > 0.
 
     Example
     ------- 
@@ -187,10 +206,15 @@ def rdrandinf(Y, R, cutoff=0, wl=None, wr=None, statistic='diffmeans', p=0, eval
     )
     """
 
+    if isinstance(fuzzy, str) and fuzzy == '':
+        fuzzy = None
+    Y, R = np.asarray(Y, dtype=float), np.asarray(R, dtype=float)
+    if ci is not None:
+        ci = np.atleast_1d(ci).astype(float)
     randmech = 'fixed margins'
     Rc_long = R - cutoff
 
-    if (fuzzy is not None) and (fuzzy !=''):
+    if fuzzy is not None:
         statistic = ''
         if isinstance(fuzzy, list) and (len(fuzzy)==2):
             fuzzy_tr = np.array(fuzzy[0])
@@ -205,8 +229,12 @@ def rdrandinf(Y, R, cutoff=0, wl=None, wr=None, statistic='diffmeans', p=0, eval
             fuzzy_tr = np.array(fuzzy)
     else:
         fuzzy_stat = ''
+    inference = rdlocrand_inference(p, statistic, vce, 'interfci' if interfci is not None else None)
+    p = inference['p']
+    if p > 0:
+        vce = inference['vce']
 
-    if (fuzzy is None) or (fuzzy ==''):
+    if fuzzy is None:
         if bernoulli is None:
             data = np.column_stack((Y, R))
             data = data[~np.isnan(data).any(axis=1)]
@@ -250,7 +278,7 @@ def rdrandinf(Y, R, cutoff=0, wl=None, wr=None, statistic='diffmeans', p=0, eval
         if evall != cutoff or evalr != cutoff:
             raise ValueError('Kernel only allowed when evall=evalr=cutoff')
     
-    if kernel != 'uniform' and statistic != 'ttest' and statistic != 'diffmeans':
+    if kernel != 'uniform' and statistic != 'ttest' and statistic != 'diffmeans' and fuzzy is None:
         raise ValueError('Kernel only allowed for diffmeans')
 
     if ci is not None:
@@ -314,7 +342,7 @@ def rdrandinf(Y, R, cutoff=0, wl=None, wr=None, statistic='diffmeans', p=0, eval
                 print('\nRunning rdwinselect...\n')
             rdwlength = rdwinselect(Rc_long, covariates, obsmin=obsmin, obsstep=obsstep, wmin=wmin, wstep=wstep, wobs=wobs,
                                 wasymmetric=wasymmetric, wmasspoints=wmasspoints, dropmissing=dropmissing, nwindows=nwindows,
-                                statistic=rdwstat, approx=approx, reps=rdwreps, plot=plot, level=level, seed=seed, quietly=True)
+                                statistic=rdwstat, p=p, vce=vce, approx=approx, reps=rdwreps, plot=plot, level=level, seed=seed, quietly=True)
             wl = cutoff + rdwlength['w_left']
             wr = cutoff + rdwlength['w_right']
             if not quietly:
@@ -333,7 +361,7 @@ def rdrandinf(Y, R, cutoff=0, wl=None, wr=None, statistic='diffmeans', p=0, eval
     Rw = Rc[ww]
     Dw = D[ww]
 
-    if (fuzzy is not None) and (fuzzy != ''):
+    if fuzzy is not None:
         Tw = fuzzy_tr[ww]
 
     if bernoulli is None:
@@ -406,12 +434,8 @@ def rdrandinf(Y, R, cutoff=0, wl=None, wr=None, statistic='diffmeans', p=0, eval
             evalr = cutoff
         R_adj = Rw + cutoff - Dw * evalr - (1 - Dw) * evall
         Rpoly = np.transpose(np.vstack([R_adj**k for k in range(1,p+1)]))
-        lfit_t = sm.WLS(Yw[Dw == 1], sm.add_constant(Rpoly[Dw == 1,:]), weights=kweights[Dw == 1]).fit()
-        Y_adj[Dw == 1] = lfit_t.resid + lfit_t.params[0]
-        lfit_c = sm.WLS(Yw[Dw == 0], sm.add_constant(Rpoly[Dw == 0,:]), weights=kweights[Dw == 0]).fit()
-        Y_adj[Dw == 0] = lfit_c.resid + lfit_c.params[0]
     
-    if (fuzzy is None) or (fuzzy == ''):
+    if fuzzy is None:
         Y_adj_null = Y_adj - nulltau * Dw
     else:
         Y_adj_null = Y_adj - nulltau * Tw
@@ -420,61 +444,46 @@ def rdrandinf(Y, R, cutoff=0, wl=None, wr=None, statistic='diffmeans', p=0, eval
     # Observed statistics and asymptotic p-values
     ###############################################################################
 
-    if (fuzzy is None) or (fuzzy == ''):
-        results = rdrandinf_model(Y_adj_null, Dw, statistic=statistic, pvalue=True, kweights=kweights, delta=delta)
-    else:
-        results = rdrandinf_model(Y_adj_null, Dw, statistic=fuzzy_stat, endogtr=Tw, pvalue=True, kweights=kweights, delta=delta)
-    
-    obs_stat = results['statistic']
-    
     if p == 0:
+        if fuzzy is None:
+            results = rdrandinf_model(Y_adj_null, Dw, statistic=statistic, pvalue=True, kweights=kweights, delta=delta)
+        else:
+            results = rdrandinf_model(Y_adj_null, Dw, statistic=fuzzy_stat, endogtr=Tw, pvalue=True, kweights=kweights, delta=delta)
+
+        obs_stat = results['statistic']
+
         if fuzzy_stat == 'wald':
             firststagereg = sm.OLS(Tw, sm.add_constant(Dw)).fit()
             aux = IV2SLS(dependent = Yw, 
-                            exog = None,
-                            endog = sm.add_constant(Tw),
-                            instruments = sm.add_constant(Dw),
+                            exog = np.ones(n_w),
+                            endog = Tw,
+                            instruments = Dw,
                             weights = kweights).fit(cov_type = 'robust')
-            obs_stat = aux.params[1]
-            se = aux.std_errors[1]
-            ci_lb = obs_stat - 1.96 * se
-            ci_ub = obs_stat + 1.96 * se
-            tstat = obs_stat / se
+            obs_stat = aux.params.iloc[1]
+            se = aux.std_errors.iloc[1]
+            critical = 1.96 if ci is None else norm.ppf(1-ci[0]/2)
+            ci_lb = obs_stat - critical * se
+            ci_ub = obs_stat + critical * se
+            tstat = (obs_stat-nulltau) / se
             asy_pval = 2 * norm.cdf(-np.abs(tstat))
             asy_power = 1 - norm.cdf(1.96 - delta / se) + norm.cdf(-1.96 - delta / se)
         else:
             asy_pval = results['p_value']
             asy_power = results['asy_power']
     else:
-        if statistic == 'diffmeans' or statistic == 'ttest' or statistic == 'all':
-            X_inter = sm.add_constant(np.column_stack((Dw.reshape(-1,1),Rpoly,Dw.reshape(-1,1)*Rpoly)))
-            lfit = sm.WLS(Yw, X_inter, weights=kweights).fit()
-            se = lfit.HC2_se[1]
-            tstat = lfit.params[1] / se
-            asy_pval = 2 * norm.cdf(-np.abs(tstat))
-            asy_power = 1 - norm.cdf(1.96 - delta / se) + norm.cdf(-1.96 - delta / se)
-        if statistic == 'ksmirnov' or statistic == 'ranksum':
-            asy_pval = np.nan
-            asy_power = np.nan
-        if statistic == 'all':
-            asy_pval = [float(asy_pval), np.nan, np.nan]
-            asy_power = [float(asy_power), np.nan, np.nan]
-        
         if fuzzy_stat == 'wald':
-            inter = Rpoly * Dw
-            firststagereg = sm.OLS(Tw, sm.add_constant(Dw)).fit()
-            aux = IV2SLS(dependent = Yw, 
-                            exog = sm.add_constant([Rpoly, inter]),
-                            endog = Tw,
-                            instruments = Dw,
-                            weights = kweights).fit(cov_type = 'robust')
-            obs_stat = aux.params[-1]
-            se = aux.std_errors[-1]
-            ci_lb = obs_stat - 1.96 * se
-            ci_ub = obs_stat + 1.96 * se
-            tstat = aux.params['Tw'] / se
-            asy_pval = 2 * norm.cdf(-np.abs(tstat))
-            asy_power = 1 - norm.cdf(1.96 - delta / se) + norm.cdf(-1.96 - delta / se)
+            hc = rdlocrand_hc_fit(Yw, Dw, Rpoly, kweights, vce, Tw)
+            obs_stat = hc['estimate']
+            tstat = (obs_stat-nulltau)/hc['se']
+            firststagereg = sm.WLS(Tw, np.column_stack((np.ones(n_w), Dw, Rpoly, Dw[:, None]*Rpoly)), weights=kweights).fit()
+        else:
+            Y_null = Yw-nulltau*(Dw if fuzzy is None else Tw)
+            hc = rdlocrand_hc_fit(Y_null, Dw, Rpoly, kweights, vce)
+            obs_stat = hc['estimate']
+            tstat = obs_stat/hc['se']
+        se = hc['se']
+        asy_pval = 2*norm.cdf(-abs(tstat))
+        asy_power = 1-norm.cdf(1.96-delta/se)+norm.cdf(-1.96-delta/se)
 
     ###############################################################################
     # Randomization-based inference
@@ -483,20 +492,20 @@ def rdrandinf(Y, R, cutoff=0, wl=None, wr=None, statistic='diffmeans', p=0, eval
     if statistic == 'all': stats_distr = np.empty((reps, 3))
     else: stats_distr  = np.empty((reps, 1))
     
-    if not quietly:
+    if not quietly and p == 0 and fuzzy_stat != 'wald':
         print('')
         print('Running randomization-based test...')
     
-    if fuzzy_stat != 'wald':
+    if p == 0 and fuzzy_stat != 'wald':
         if bernoulli is None:
             max_reps = comb(n_w, n1_w)
-            reps = min(reps, max_reps)
+            reps = int(min(reps, max_reps))
             if max_reps < reps:
                 print(f'Chosen no. of reps > total no. of permutations.\nreps set to {reps}.')
             
             for i in range(reps):
                 D_sample = np.random.choice(Dw, size = len(Dw), replace=False)
-                if (fuzzy is None) or (fuzzy ==''):
+                if fuzzy is None:
                     obs_stat_sample = rdrandinf_model(Y_adj_null, D_sample, statistic, kweights=kweights, delta=delta)['statistic']
                 else:
                     obs_stat_sample = rdrandinf_model(Y_adj_null, D_sample, statistic=fuzzy_stat, endogtr=Tw, kweights=kweights, delta=delta)['statistic']
@@ -512,7 +521,7 @@ def rdrandinf(Y, R, cutoff=0, wl=None, wr=None, statistic='diffmeans', p=0, eval
 
         if not quietly:
             print('Randomization-based test complete.')
-        
+
         if statistic == 'all':
             p_value1 = np.mean(np.abs(stats_distr[:, 0]) >= np.abs(obs_stat[0]), axis=0)
             p_value2 = np.mean(np.abs(stats_distr[:, 1]) >= np.abs(obs_stat[1]), axis=0)
@@ -527,22 +536,38 @@ def rdrandinf(Y, R, cutoff=0, wl=None, wr=None, statistic='diffmeans', p=0, eval
     ###############################################################################
     # Confidence interval
     ###############################################################################
-        
+
     if ci is not None:
         ci_alpha = ci[0]
-        if fuzzy_stat != 'wald':
-            wr_c = wr - cutoff
-            wl_c = wl - cutoff
-            if not np.isscalar(ci):
-                t_list = ci[1:]
-                aux = rdsensitivity_inner(Y, Rc, p=p, wlist=wr_c, wlist_left=wl_c, tlist=t_list, fuzzy=fuzzy_stat, ci=[wl_c, wr_c], ci_alpha=ci_alpha, reps=reps, quietly=quietly, seed=seed)
+        if p > 0:
+            if len(ci) > 1 and fuzzy_stat != 'wald':
+                grid = np.unique(ci[1:])
+                pv = []
+                for tau in grid:
+                    yy = Yw-tau*(Dw if fuzzy is None else Tw)
+                    fit = rdlocrand_hc_fit(yy, Dw, Rpoly, kweights, vce)
+                    pv.append(2*norm.cdf(-abs(fit['estimate']/fit['se'])))
+                conf_int = find_CI(pv, ci_alpha, grid)
+            elif fuzzy_stat == 'ar':
+                raise ValueError('For fuzzy Anderson-Rubin confidence sets, supply the treatment-effect grid in ci.')
             else:
-                aux = rdsensitivity_inner(Y, Rc, p=p, wlist=wr_c, wlist_left=wl_c, fuzzy=fuzzy_stat, ci=[wl_c, wr_c], ci_alpha=ci_alpha, reps=reps, quietly=quietly, seed=seed)
-            conf_int = aux['ci']
+                estimate = obs_stat+(0 if fuzzy_stat == 'wald' else nulltau)
+                conf_int = np.array([[estimate-norm.ppf(1-ci_alpha/2)*se,
+                                      estimate+norm.ppf(1-ci_alpha/2)*se]])
+            ci_lb, ci_ub = conf_int[0]
+        elif fuzzy_stat != 'wald':
+            wr_c, wl_c = wr-cutoff, wl-cutoff
+            fuzzy_ci = None if fuzzy is None else fuzzy_tr
+            opts = dict(p=p, wlist=[wr_c], wlist_left=[wl_c], statistic=statistic,
+                        kernel=kernel, vce=vce, fuzzy=fuzzy_ci, ci=[wl_c, wr_c],
+                        ci_alpha=ci_alpha, reps=reps, quietly=quietly, seed=seed)
+            if len(ci) > 1:
+                opts['tlist'] = ci[1:]
+            conf_int = rdsensitivity_inner(Y, Rc, **opts)['ci']
         else:
             conf_int = np.array([[ci_lb, ci_ub]])
         if np.any(np.isnan(conf_int)):
-            print('Consider a larger tlist in ci() option.')
+            print('No grid points accepted. Consider a larger tlist in ci() option.')
 
     ###############################################################################
     # Confidence interval under interference
@@ -552,7 +577,7 @@ def rdrandinf(Y, R, cutoff=0, wl=None, wr=None, statistic='diffmeans', p=0, eval
         p_low = interfci / 2
         p_high = 1 - interfci / 2
         qq = np.quantile(stats_distr, [p_low, p_high])
-        interf_ci = np.array([obs_stat[0] - qq[1], obs_stat[0] - qq[0]])
+        interf_ci = np.array([float(np.asarray(obs_stat).reshape(-1)[0]) - qq[1], float(np.asarray(obs_stat).reshape(-1)[0]) - qq[0]])
 
     ###############################################################################
     # Output and display results
@@ -608,10 +633,12 @@ def rdrandinf(Y, R, cutoff=0, wl=None, wr=None, statistic='diffmeans', p=0, eval
         print(f'{"Number of obs =":18}{n:14.0f}')
         print(f'{"Order of poly =":18}{p:14.0f}')
         print(f'{"Kernel type =":18}{kernel:>14}')
-        print(f'{"Reps =":18}{reps:14.0f}')
+        if p == 0:
+            print(f'{"Reps =":18}{reps:14.0f}')
         print(f'{"Window =":18}{wselect:>14}')
         print(f'{"H0:     tau  =":18}{nulltau:14.3f}')
-        print(f'{"Randomization =":18}{randmech:>14}')
+        if p == 0:
+            print(f'{"Randomization =":18}{randmech:>14}')
         print('\n')
 
         print(f'{"Cutoff c = ":10}{cutoff:^9.3f}{"Left of c":>12}{"Right of c":>12}')
@@ -628,22 +655,27 @@ def rdrandinf(Y, R, cutoff=0, wl=None, wr=None, statistic='diffmeans', p=0, eval
             print(firststagereg.summary())
             print('\n' + '=' * 80 )
 
-        print(f'{"":31}{"Finite sample":^20}{"Large sample":^29}')
-        print(f'{"":31}{"-" * 18:18}{"":2}{"-" * 29:29}')
-        print(f'{"Statistic":19}{"T":>11}{"P>|T|":^21}{"P>|T|":^9}{"Power vs d = ":>15}{delta:4.3f}')
+        if p > 0:
+            print(f'Large-sample inference, {vce}')
+            print(f'{"Statistic":19}{"T":>11}{"P>|T|":>12}{"Std. error":>12}')
+            print(f'{statdisp:19}{obs_stat:11.3f}{asy_pval:12.3f}{se:12.3f}')
+        else:
+            print(f'{"":31}{"Finite sample":^20}{"Large sample":^29}')
+            print(f'{"":31}{"-" * 18:18}{"":2}{"-" * 29:29}')
+            print(f'{"Statistic":19}{"T":>11}{"P>|T|":^21}{"P>|T|":^9}{"Power vs d = ":>15}{delta:4.3f}')
        
-        print('=' * 80)
+            print('=' * 80)
 
-        if statistic != 'all':
-            if not np.isscalar(asy_pval): asy_pval = asy_pval[0]
-            if not np.isscalar(asy_power): asy_power = asy_power[0]
-            if not np.isscalar(obs_stat): obs_stat = obs_stat[0]
-            print(f'{statdisp:19}{obs_stat:11.3f}{p_value:^21.3f}{asy_pval:^9.3f}{asy_power:20.3f}')
+            if statistic != 'all':
+                if not np.isscalar(asy_pval): asy_pval = asy_pval[0]
+                if not np.isscalar(asy_power): asy_power = asy_power[0]
+                if not np.isscalar(obs_stat): obs_stat = obs_stat[0]
+                print(f'{statdisp:19}{obs_stat:11.3f}{p_value:^21.3f}{asy_pval:^9.3f}{asy_power:20.3f}')
 
-        if statistic == 'all':
-            print(f"{'Diff. in means':19}{obs_stat[0]:11.3f}{p_value[0]:^21.3f}{asy_pval[0]:<9.3f}{asy_power[0]:>20.3f}")
-            print(f"{'Kolmogorov-Smirnov':19}{obs_stat[1]:>11.3f}{p_value[1]:^21.3f}{asy_pval[1]:<9.3f}{asy_power[1]:>20.3f}")
-            print(f"{'Rank sum z-stat':19}{obs_stat[2]:>11.3f}{p_value[2]:^21.3f}{asy_pval[2]:<9.3f}{asy_power[2]:>20.3f}")
+            if statistic == 'all':
+                print(f"{'Diff. in means':19}{obs_stat[0]:11.3f}{p_value[0]:^21.3f}{asy_pval[0]:<9.3f}{asy_power[0]:>20.3f}")
+                print(f"{'Kolmogorov-Smirnov':19}{obs_stat[1]:>11.3f}{p_value[1]:^21.3f}{asy_pval[1]:<9.3f}{asy_power[1]:>20.3f}")
+                print(f"{'Rank sum z-stat':19}{obs_stat[2]:>11.3f}{p_value[2]:^21.3f}{asy_pval[2]:<9.3f}{asy_power[2]:>20.3f}")
 
         print('=' * 80)
         if ci is not None:
@@ -664,165 +696,14 @@ def rdrandinf(Y, R, cutoff=0, wl=None, wr=None, statistic='diffmeans', p=0, eval
             print()
             print(f"{(1 - interfci) * 100:.0f}% confidence interval under interference: [{round(interf_ci[0], 3):.3f}, {round(interf_ci[1], 3):.3f}]")
 
+    output.update(inference)
+    output['inference'] = 'large-sample' if p > 0 or fuzzy_stat == 'wald' else 'randomization'
+    if p > 0:
+        output['se'] = se
     return output
 
 
-
-
-
-
-
-
-
-
-@rdlocrand_preserve_rng
-def rdsensitivity_inner(Y, R, cutoff=0, wlist=None, wlist_left=None,
-                   tlist=None, statistic='diffmeans', p=0,
-                    evalat='cutoff', kernel='uniform', fuzzy=None,
-                    ci=None, ci_alpha=0.05, reps=1000, seed=666, quietly=False):
-    
-    """
-    This function is a copy of rdsensitivity to be called inside inside rdlocrand
-    and avoid the circular reference when imporing the modules
-    """
-    
-    ###############################################################################
-    # Parameters and error checking
-    ###############################################################################
-    
-    if cutoff < np.min(R) or cutoff > np.max(R):
-        raise ValueError('Cutoff must be within the range of the running variable')
-    if statistic not in ['diffmeans', 'ttest', 'ksmirnov', 'ranksum']:
-        raise ValueError(statistic + ' not a valid statistic')
-    if evalat not in ['cutoff', 'means']:
-        raise ValueError('evalat only admits means or cutoff')
-    if wlist_left is not None:
-        if np.isscalar(wlist_left): wlist_left = np.array([wlist_left])
-        if wlist is None:
-            raise ValueError('Need to specify wlist when wlist_left is specified')
-        elif np.isscalar(wlist): wlist= np.array([wlist])
-        if len(wlist) != len(wlist_left):
-            raise ValueError('Lengths of wlist and wlist_left need to coincide')
-    if ci is not None and len(ci) != 2:
-        raise ValueError('Need to specify wleft and wright in CI option')
-
-    data = np.column_stack((Y, R))
-    data = data[~np.isnan(data).any(axis=1)]
-    Y = data[:, 0]
-    R = data[:, 1]
-
-    Rc = R - cutoff
-
-    ###############################################################################
-    # Default window list
-    ###############################################################################
-
-    if wlist is None:
-        aux = rdwinselect(Rc, wobs=5, quietly=True)
-        results = aux['results'].to_numpy()
-        wlist = results[:, 6]
-        wlist_left = results[:, 5]
-        wlist_orig = wlist + cutoff
-        wlist_left_orig = wlist_left + cutoff
-    else:
-        wlist_orig = wlist
-        wlist = wlist - cutoff
-        if wlist_left is None:
-            wlist_left = -wlist
-            wlist_left_orig = wlist_left
-        else:
-            wlist_left_orig = wlist_left
-            wlist_left = wlist_left - cutoff
-
-    wnum = len(wlist)
-    
-
-    ###############################################################################
-    # Default tau list
-    ###############################################################################
-
-    if tlist is None:
-        D = (Rc >= 0).astype(int)
-        wfirst = max(wlist[0], abs(wlist_left[0]))
-        if (fuzzy is None) or (fuzzy==''):
-            Yaux = Y[np.abs(Rc) <= wfirst]
-            Daux = D[np.abs(Rc) <= wfirst]
-            model = sm.OLS(Yaux, sm.add_constant(Daux))
-            results = model.fit()
-            ci_lb = round(results.params[1] - 1.96 * np.sqrt(results.cov_params()[1, 1]), 2)
-            ci_ub = round(results.params[1] + 1.96 * np.sqrt(results.cov_params()[1, 1]), 2)
-        else:
-            Yaux = Y[np.abs(Rc) <= wfirst]
-            Daux = D[np.abs(Rc) <= wfirst]
-            Taux = fuzzy[np.abs(Rc) <= wfirst]
-            model = IV2SLS(dependent = Yaux, 
-                            exog = None,
-                            endog = sm.add_constant(Taux),
-                            instruments = sm.add_constant(Daux))
-            instrument_results = model.fit(cov_type = 'robust')
-            ci_lb = round(instrument_results.params[1] - 1.96 * aux.std_errors[1], 2)
-            ci_ub = round(instrument_results.params[1] + 1.96 * aux.std_errors[1], 2)
-
-        wstep = round((ci_ub - ci_lb) / 10, 2)
-        tlist = np.arange(ci_lb, ci_ub + wstep, wstep)
-
-    ###############################################################################
-    # Sensitivity analysis
-    ###############################################################################
-
-    if np.isscalar(tlist): tlist = np.array([tlist])
-
-    results = np.empty((len(tlist), len(wlist)))
-    if not quietly:
-        print('')
-        print('Running sensitivity analysis...', end="")
-
-    for row, t in enumerate(tlist):
-        for w in range(wnum):
-            wright = wlist[w]
-            wleft = wlist_left[w]
-            if evalat == 'means':
-                ww = (np.round(Rc, 8) >= np.round(wleft, 8)) & (np.round(Rc, 8) <= np.round(wright, 8))
-                Rw = R[ww]
-                Dw = D[ww]
-                evall = np.mean(Rw[Dw == 0])
-                evalr = np.mean(Rw[Dw == 1])
-            else:
-                evall = None
-                evalr = None
-
-            aux = rdrandinf(Y, Rc, wl=wleft, wr=wright, p=p, reps=reps, nulltau=t,
-                               statistic=statistic, kernel=kernel, evall=evall, evalr=evalr,
-                               fuzzy=fuzzy, seed=seed, quietly=True)
-            results[row, w] = aux['p.value']
-
-    if not quietly:
-        print('Sensitivity analysis complete.\n')
-
-    ###############################################################################
-    # Confidence interval
-    ###############################################################################
-
-    conf_int = None
-    if ci is not None:
-        ci_window_l = ci[0] - cutoff
-        ci_window_r = ci[1] - cutoff
-
-        if np.isin(ci_window_r, wlist) and np.isin(ci_window_l, wlist_left):
-            col = np.where(wlist == ci_window_r)[0][0]
-            aux = results[:, col]
-
-            conf_int = find_CI(aux, ci_alpha, tlist)
-        else:
-            raise ValueError('Window specified in ci not in wlist')
-        
-    ###############################################################################
-    # Output
-    ###############################################################################
-
-    output = {'tlist': tlist, 'wlist': wlist_orig, 'wlist_left': wlist_left_orig, 'results': results}
-    
-    if conf_int is not None:
-        output['ci'] = conf_int
-
-    return output
+def rdsensitivity_inner(*args, **kwargs):
+    # Import at call time to avoid the public modules' import cycle.
+    from rdlocrand.rdsensitivity import rdsensitivity
+    return rdsensitivity(*args, nodraw=True, **kwargs)

@@ -1,6 +1,6 @@
 #################################################################
 # Auxiliary functions for rdlocrand
-# !version 2.0 14-May-2026
+# !version 3.0 04-Oct-2026
 # Authors: Matias Cattaneo, Rocio Titiunik, Gonzalo Vazquez-Bare
 #################################################################
 
@@ -69,7 +69,10 @@ ksmirnov.statistic <- function(x,y){
   n.y <- length(y)
   z <- c(x,y)
   w <- c(rep(1/n.x,n.x),rep(-1/n.y,n.y))
-  max(abs(cumsum(w[order(z)])))
+  ord <- order(z)
+  # Empirical CDFs jump once per distinct value, including all tied observations.
+  ends <- !duplicated(z[ord], fromLast = TRUE)
+  max(abs(cumsum(w[ord])[ends]))
 }
 
 rdrandinf.model <- function(Y,D,statistic,pvalue=FALSE,kweights,endogtr,delta=NULL){
@@ -476,4 +479,67 @@ findstep <- function(R,D,obsmin,obsstep,times) {
   }
   step <- max(S)
   return(step)
+}
+
+# Warnings are collected across nested calls and emitted after the outer result.
+rdlocrand_inference_env <- new.env(parent = emptyenv())
+rdlocrand_inference_env$depth <- 0L
+rdlocrand_inference_env$warnings <- character()
+rdlocrand_inference_scope <- function(){
+  env <- rdlocrand_inference_env
+  if (env$depth == 0L) env$warnings <- character()
+  env$depth <- env$depth + 1L
+  function(){
+    env$depth <- env$depth - 1L
+    if (env$depth == 0L){
+      messages <- unique(env$warnings)
+      env$warnings <- character()
+      for (message in messages) warning(message, call. = FALSE)
+    }
+  }
+}
+rdlocrand_inference <- function(p, statistic, vce = "HC3", unavailable = NULL, context = NULL){
+  if (length(p) != 1L || !is.numeric(p) || !is.finite(p) || p < 0 || p != floor(p))
+    stop('p must be a nonnegative integer', call. = FALSE)
+  vce <- toupper(vce)
+  rdlocrand_validate_choice(vce, c('HC1','HC2','HC3'), 'vce must be HC1, HC2, or HC3')
+  requested <- p
+  if (is.null(unavailable) && statistic %in% c('ksmirnov','ranksum','all','hotelling'))
+    unavailable <- paste0('statistic=', statistic)
+  if (p > 0 && !is.null(unavailable)){
+    message <- paste0('Polynomial adjustment is unavailable for ', unavailable,
+                      '. Requested p=', p, '; results were computed with p=0, without polynomial adjustment.')
+    if (!is.null(context)) message <- paste0(context, ': ', message)
+    rdlocrand_inference_env$warnings <- c(rdlocrand_inference_env$warnings, message)
+    p <- 0
+  }
+  list(p.requested = requested, p = p, vce = if (p > 0) vce else NA_character_)
+}
+
+# Weighted OLS/2SLS sandwich. IV uses structural residuals and the leverage
+# of the projected regressors (the second-stage orthogonal projection).
+rdlocrand_hc_fit <- function(y, d, powers, weights, vce, treatment = NULL){
+  use <- weights > 0
+  y <- y[use]; d <- d[use]; powers <- as.matrix(powers)[use,,drop=FALSE]
+  weights <- weights[use]
+  z <- cbind(1, d, powers, d*powers)
+  x <- z
+  if (!is.null(treatment)) x[,2] <- treatment[use]
+  zw <- z * sqrt(weights)
+  if (nrow(z) <= ncol(z) || qr(zw)$rank < ncol(z))
+    stop('Polynomial regression needs more observations and distinct scores than fitted coefficients.', call. = FALSE)
+  projected <- if (is.null(treatment)) x else z %*% qr.coef(qr(zw), x*sqrt(weights))
+  xw <- projected * sqrt(weights)
+  q <- qr(xw)
+  if (q$rank < ncol(xw)) stop('TSLS polynomial regression is not identified.', call. = FALSE)
+  beta <- as.numeric(qr.coef(q, y*sqrt(weights)))
+  bread <- chol2inv(qr.R(q))
+  leverage <- rowSums((xw %*% bread)*xw)
+  if (vce != 'HC1' && any(1-leverage <= 1e-10))
+    stop('HC2/HC3 is undefined for a polynomial fit with unit leverage.', call. = FALSE)
+  residual <- as.numeric(y-x %*% beta)
+  scale <- switch(vce, HC1 = rep(sqrt(nrow(x)/(nrow(x)-ncol(x))), nrow(x)),
+                  HC2 = 1/sqrt(1-leverage), HC3 = 1/(1-leverage))
+  influence <- as.numeric(projected %*% bread[,2])*weights*residual*scale
+  list(estimate = beta[2], se = sqrt(sum(influence^2)), coefficients = beta)
 }

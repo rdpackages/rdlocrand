@@ -1,6 +1,6 @@
 ###############################################################################
 # rdsensitivity: sensitivity analysis for randomization inference in RD
-# !version 2.0 14-May-2026
+# !version 3.0 04-Oct-2026
 # Authors: Matias Cattaneo, Rocio Titiunik, Gonzalo Vazquez-Bare
 ###############################################################################
 
@@ -43,6 +43,15 @@
 #' @param nodraw suppresses contour plot.
 #' @param quietly suppresses the output table.
 #'
+#' @param vce heteroskedasticity-consistent variance estimator for \code{p > 0}: \code{HC1}, \code{HC2}, or \code{HC3} (default). Ignored when \code{p = 0}.
+#'
+#' @details
+#' With \code{p > 0}, the grid contains large-sample normal p-values for mean contrasts
+#' or fuzzy Anderson-Rubin tests, with HC3 standard errors by default. Supply tlist
+#' explicitly; confidence sets invert these tests over the supplied grid.
+#' For ksmirnov or ranksum, a positive p is replaced by \code{p = 0} and a warning
+#' is issued at the end. Inference with \code{p = 0} is unchanged.
+#'
 #' @return
 #' A list containing:
 #' \item{tlist}{treatment-effect grid.}
@@ -50,6 +59,10 @@
 #' \item{wlist_left}{left endpoints of the window grid.}
 #' \item{results}{matrix of p-values for each treatment-effect and window pair.}
 #' \item{ci}{confidence interval; included only when \code{ci} is specified.}
+#'
+#' \item{p.requested, p}{requested and effective polynomial degrees.}
+#' \item{vce}{HC variance estimator; \code{NA} when \code{p = 0}.}
+#' \item{inference}{inference method used.}
 #'
 #' @examples
 #' # Toy dataset
@@ -81,12 +94,15 @@ rdsensitivity <- function(Y,R,
                           reps = 1000,
                           seed = 666,
                           nodraw = FALSE,
-                          quietly = FALSE){
+                          quietly = FALSE, vce = "HC3"){
 
 
   ###############################################################################
   # Parameters and error checking
   ###############################################################################
+
+  finish_inference <- rdlocrand_inference_scope()
+  on.exit(finish_inference(), add = TRUE)
 
   if (cutoff<min(R,na.rm=TRUE) | cutoff>max(R,na.rm=TRUE)) stop('Cutoff must be within the range of the running variable')
   rdlocrand_validate_choice(
@@ -100,6 +116,9 @@ rdsensitivity <- function(Y,R,
     c('uniform','triangular','epan'),
     paste(paste(kernel, collapse = ', '),'not a valid kernel')
   )
+  inference <- rdlocrand_inference(p, statistic, vce)
+  p <- inference$p
+  if (p > 0) vce <- inference$vce
   if (missing(tlist) & p!=0) stop('need to specify tlist when p>0')
   if (!missing(wlist_left)){
     if (missing(wlist)) stop('Need to specify wlist when wlist_left is specified')
@@ -110,12 +129,14 @@ rdsensitivity <- function(Y,R,
   restore_rng <- rdlocrand_seed_scope(seed)
   on.exit(restore_rng(), add = TRUE)
 
-  data <- cbind(Y,R)
-  data <- data[complete.cases(data),]
+  data <- cbind(Y,R,fuzzy)
+  data <- data[complete.cases(data),,drop=FALSE]
+  if (!is.null(fuzzy)) fuzzy <- data[,3]
   Y <- data[,1]
   R <- data[,2]
 
   Rc <- R - cutoff
+  D <- as.numeric(Rc >= 0)
 
 
   ###############################################################################
@@ -125,13 +146,15 @@ rdsensitivity <- function(Y,R,
   if (missing(wlist)){
     aux <- rdwinselect(Rc,wobs=5,quietly=TRUE)
     wlist <- aux$results[,7]
-    wlist <- aux$results[,6]
+    wlist_left <- aux$results[,6]
+    wlist_orig <- wlist + cutoff
+    wlist_left_orig <- wlist_left + cutoff
   } else{
     wlist_orig <- wlist
     wlist <- wlist - cutoff
     if(missing(wlist_left)){
       wlist_left <- -wlist
-      wlist_left_orig <- wlist_left
+      wlist_left_orig <- wlist_left + cutoff
     } else{
       wlist_left_orig <- wlist_left
       wlist_left <- wlist_left - cutoff
@@ -181,7 +204,7 @@ rdsensitivity <- function(Y,R,
       wleft <- wlist_left[w]
       if (evalat=='means'){
         ww <- (round(Rc,8) >= round(wleft,8)) & (round(Rc,8) <= round(wright,8))
-        Rw <- R[ww]
+        Rw <- Rc[ww]
         Dw <- D[ww]
         evall <- mean(Rw[Dw==0])
         evalr <- mean(Rw[Dw==1])
@@ -192,8 +215,8 @@ rdsensitivity <- function(Y,R,
 
       aux <- rdrandinf(Y,Rc,wl=wleft,wr=wright,p=p,reps=reps,nulltau=t,
                        statistic=statistic,kernel=kernel,evall=evall,evalr=evalr,
-                       fuzzy=fuzzy,seed=seed,quietly=TRUE)
-      results[row,w] <- aux$p.value
+                       fuzzy=fuzzy,vce=vce,seed=seed,quietly=TRUE)
+      results[row,w] <- if (p > 0) aux$asy.pvalue else aux$p.value
     }
     row <- row + 1
   }
@@ -250,6 +273,11 @@ rdsensitivity <- function(Y,R,
     }
   }
 
+  output$p.requested <- inference$p.requested
+  output$p <- p
+  output$vce <- inference$vce
+  output$inference <- if (p > 0) 'large-sample' else 'randomization'
+  if (p > 0 && !quietly) cat(paste0('Large-sample inference, ', vce, '\n'))
   return(output)
 
 }

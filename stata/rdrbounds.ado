@@ -2,7 +2,7 @@
 * RDRBOUNDS: Rosenbum bounds for randomization inference in RDD
 * Authors: Matias Cattaneo, Rocio Titiunik, Gonzalo Vazquez-Bare
 ********************************************************************************
-* !version 2.0 2026-05-14
+* !version 3.0 2026-10-04
 
 version 13
 
@@ -25,6 +25,13 @@ program define rdrbounds, rclass sortpreserve
 													 FMpval                      ///
 													 reps(integer 500)           ///
 													 seed(integer 666) ]
+    local poly_unavailable "unavailable(rdrbounds)"
+    rdlocrand_inference, p(`p') statistic(`statistic') `poly_unavailable'
+    local p_requested = r(p_requested)
+    local p = r(p)
+    local vce "`r(vce)'"
+    local poly_warning "`r(warning)'"
+
 
 	tokenize `varlist'
 	
@@ -507,6 +514,12 @@ program define rdrbounds, rclass sortpreserve
 		mata: st_matrix("lbound",LB[2::rows(LB),.])
 		return matrix lbound = lbound
 	}
+    return scalar p_requested = `p_requested'
+    return scalar p = `p'
+    return local p_warning "`poly_warning'"
+    if `p'>0 return local vce "`vce'"
+    if "`poly_warning'"!="" di as error "Warning: `poly_warning'"
+
 end
 
 
@@ -653,5 +666,6 @@ program define output_line
 			di _col(15) as text "{ralign 15: upper bound}" as text "{c |}" as res `numdisp'
 		}
 	}
+
 end
 

@@ -1,7 +1,7 @@
 Package: rdlocrand
 Type: Package
 Title: Local Randomization Methods for RD Designs
-Version: 2.0
+Version: 3.0
 Authors@R: c(person(given = c("Matias", "D."),
                       family = "Cattaneo",
                       role = c("aut", "cre"),
@@ -30,3 +30,4 @@ Author: Matias D. Cattaneo [aut, cre],
   Gonzalo Vazquez-Bare [aut]
 Maintainer: Matias D. Cattaneo <matias.d.cattaneo@gmail.com>
 Config/roxygen2/version: 8.0.0
+RoxygenNote: 7.3.3

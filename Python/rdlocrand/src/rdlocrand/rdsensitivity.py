@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import numpy as np
+from rdlocrand.rdlocrand_fun import rdlocrand_inference
 import statsmodels.api as sm
 from linearmodels import IV2SLS
 from rdlocrand.rdwinselect import rdwinselect
@@ -13,7 +14,7 @@ def rdsensitivity(Y, R, cutoff=0, wlist=None, wlist_left=None,
                    tlist=None, statistic='diffmeans', p=0,
                     evalat='cutoff', kernel='uniform', fuzzy=None,
                     ci=None, ci_alpha=0.05, reps=1000, seed=666, 
-                    nodraw=False, quietly=False):
+                    nodraw=False, quietly=False, vce='HC3'):
     
     """
     Sensitivity analysis for RD designs under local randomization
@@ -44,6 +45,13 @@ def rdsensitivity(Y, R, cutoff=0, wlist=None, wlist_left=None,
     A Reexamination of the Effect of Head Start on Child Mortality.
     Journal of Policy Analysis and Management 36(3): 643-681.
     URL: https://rdpackages.github.io/references/Cattaneo-Titiunik-VazquezBare_2017_JPAM.pdf
+
+    Notes:
+    With p > 0, the grid contains large-sample normal p-values for mean contrasts
+    or fuzzy Anderson-Rubin tests, with HC3 standard errors by default. Supply tlist
+    explicitly; confidence sets invert these tests over the supplied grid.
+    For ksmirnov or ranksum, a positive p is replaced by p = 0 and a warning
+    is issued at the end. Inference with p = 0 is unchanged.
 
     Parameters:
     -----------
@@ -100,6 +108,10 @@ def rdsensitivity(Y, R, cutoff=0, wlist=None, wlist_left=None,
     quietly : bool, optional
         Suppresses the output table.
 
+    vce : str, optional
+        Variance estimator for p > 0: 'HC1', 'HC2', or 'HC3' (default).
+        Ignored when p = 0.
+
     Returns:
     --------
     dict
@@ -110,6 +122,9 @@ def rdsensitivity(Y, R, cutoff=0, wlist=None, wlist_left=None,
         - ``wlist_left``: left endpoints of the window grid.
         - ``results``: p-values for each treatment-effect and window pair.
         - ``ci``: confidence interval; included only when ``ci`` is specified.
+        - ``p.requested``, ``p``: requested and effective polynomial degrees.
+        - ``vce``: HC estimator, or None when p = 0.
+        - ``inference``: inference method used.
 
     Examples:
     ---------
@@ -135,6 +150,19 @@ def rdsensitivity(Y, R, cutoff=0, wlist=None, wlist_left=None,
     # Parameters and error checking
     ###############################################################################
     
+    Y, R = np.asarray(Y, dtype=float), np.asarray(R, dtype=float)
+    inference = rdlocrand_inference(p, statistic, vce)
+    p = inference['p']
+    if p > 0:
+        vce = inference['vce']
+        if tlist is None:
+            raise ValueError('Specify tlist when p>0.')
+    if wlist is not None:
+        wlist = np.atleast_1d(wlist).astype(float)
+    if wlist_left is not None:
+        wlist_left = np.atleast_1d(wlist_left).astype(float)
+    if tlist is not None:
+        tlist = np.unique(np.atleast_1d(tlist).astype(float))
     if cutoff < np.min(R) or cutoff > np.max(R):
         raise ValueError('Cutoff must be within the range of the running variable')
     if statistic not in ['diffmeans', 'ttest', 'ksmirnov', 'ranksum']:
@@ -149,12 +177,15 @@ def rdsensitivity(Y, R, cutoff=0, wlist=None, wlist_left=None,
     if ci is not None and len(ci) != 2:
         raise ValueError('Need to specify wleft and wright in CI option')
 
-    data = np.column_stack((Y, R))
+    data = np.column_stack((Y, R) if fuzzy is None else (Y, R, fuzzy))
     data = data[~np.isnan(data).any(axis=1)]
     Y = data[:, 0]
     R = data[:, 1]
+    if fuzzy is not None:
+        fuzzy = data[:, 2]
 
     Rc = R - cutoff
+    D = (Rc >= 0).astype(float)
 
     ###############################################################################
     # Default window list
@@ -172,7 +203,7 @@ def rdsensitivity(Y, R, cutoff=0, wlist=None, wlist_left=None,
         wlist = wlist - cutoff
         if wlist_left is None:
             wlist_left = -wlist
-            wlist_left_orig = wlist_left
+            wlist_left_orig = wlist_left+cutoff
         else:
             wlist_left_orig = wlist_left
             wlist_left = wlist_left - cutoff
@@ -198,12 +229,12 @@ def rdsensitivity(Y, R, cutoff=0, wlist=None, wlist_left=None,
             Daux = D[np.abs(Rc) <= wfirst]
             Taux = fuzzy[np.abs(Rc) <= wfirst]
             model = IV2SLS(dependent = Yaux, 
-                            exog = None,
-                            endog = sm.add_constant(Taux),
-                            instruments = sm.add_constant(Daux))
+                            exog = np.ones(len(Yaux)),
+                            endog = Taux,
+                            instruments = Daux)
             instrument_results = model.fit(cov_type = 'robust')
-            ci_lb = round(instrument_results.params[1] - 1.96 * aux.std_errors[1], 2)
-            ci_ub = round(instrument_results.params[1] + 1.96 * aux.std_errors[1], 2)
+            ci_lb = round(instrument_results.params.iloc[1] - 1.96 * instrument_results.std_errors.iloc[1], 2)
+            ci_ub = round(instrument_results.params.iloc[1] + 1.96 * instrument_results.std_errors.iloc[1], 2)
 
         wstep = round((ci_ub - ci_lb) / 10, 2)
         tlist = np.arange(ci_lb, ci_ub + wstep, wstep)
@@ -223,7 +254,7 @@ def rdsensitivity(Y, R, cutoff=0, wlist=None, wlist_left=None,
             wleft = wlist_left[w]
             if evalat == 'means':
                 ww = (np.round(Rc, 8) >= np.round(wleft, 8)) & (np.round(Rc, 8) <= np.round(wright, 8))
-                Rw = R[ww]
+                Rw = Rc[ww]
                 Dw = D[ww]
                 evall = np.mean(Rw[Dw == 0])
                 evalr = np.mean(Rw[Dw == 1])
@@ -233,8 +264,8 @@ def rdsensitivity(Y, R, cutoff=0, wlist=None, wlist_left=None,
 
             aux = rdrandinf(Y, Rc, wl=wleft, wr=wright, p=p, reps=reps, nulltau=t,
                                statistic=statistic, kernel=kernel, evall=evall, evalr=evalr,
-                               fuzzy=fuzzy, seed=seed, quietly=True)
-            results[row, w] = aux['p.value']
+                               fuzzy=fuzzy, vce=vce, seed=seed, quietly=True)
+            results[row, w] = aux['asy.pvalue' if p > 0 else 'p.value']
 
     if not quietly:
         print('Sensitivity analysis complete.\n')
@@ -284,4 +315,8 @@ def rdsensitivity(Y, R, cutoff=0, wlist=None, wlist_left=None,
             plt.title('Sensitivity Analysis')
             plt.show()
 
+    output.update(inference)
+    output['inference'] = 'large-sample' if p > 0 else 'randomization'
+    if p > 0 and not quietly:
+        print(f'Large-sample inference, {vce}')
     return output

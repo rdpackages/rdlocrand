@@ -21,7 +21,8 @@ rdsensitivity(
   reps = 1000,
   seed = 666,
   nodraw = FALSE,
-  quietly = FALSE
+  quietly = FALSE,
+  vce = "HC3"
 )
 }
 \arguments{
@@ -58,6 +59,8 @@ rdsensitivity(
 \item{nodraw}{suppresses contour plot.}
 
 \item{quietly}{suppresses the output table.}
+
+\item{vce}{heteroskedasticity-consistent variance estimator for \code{p > 0}: \code{HC1}, \code{HC2}, or \code{HC3} (default). Ignored when \code{p = 0}.}
 }
 \value{
 A list containing:
@@ -66,10 +69,21 @@ A list containing:
 \item{wlist_left}{left endpoints of the window grid.}
 \item{results}{matrix of p-values for each treatment-effect and window pair.}
 \item{ci}{confidence interval; included only when \code{ci} is specified.}
+
+\item{p.requested, p}{requested and effective polynomial degrees.}
+\item{vce}{HC variance estimator; \code{NA} when \code{p = 0}.}
+\item{inference}{inference method used.}
 }
 \description{
 \code{rdsensitivity} analyzes the sensitivity of randomization p-values
 and confidence intervals to different window lengths.
+}
+\details{
+With \code{p > 0}, the grid contains large-sample normal p-values for mean contrasts
+or fuzzy Anderson-Rubin tests, with HC3 standard errors by default. Supply tlist
+explicitly; confidence sets invert these tests over the supplied grid.
+For ksmirnov or ranksum, a positive p is replaced by \code{p = 0} and a warning
+is issued at the end. Inference with \code{p = 0} is unchanged.
 }
 \examples{
 # Toy dataset

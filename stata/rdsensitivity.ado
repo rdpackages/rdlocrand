@@ -2,7 +2,7 @@
 * RDSENSITIVITY: sensitivity analysis for randomization inference in RD designs
 * Authors: Matias Cattaneo, Rocio Titiunik, Gonzalo Vazquez-Bare
 ********************************************************************************
-* !version 2.0 2026-05-14
+* !version 3.0 2026-10-04
 
 version 13
 
@@ -14,7 +14,8 @@ program define rdsensitivity, rclass sortpreserve
 													  wlist_left(numlist)         ///
 													  tlist(numlist min=1)        ///
 													  STATistic(string)           ///
-													  p(integer 0)                ///
+													  VCE(string)                ///
+													 p(integer 0)                ///
 													  evalat(string)              ///
 													  kernel(string)              ///
 													  fuzzy(namelist min=1 max=1) ///
@@ -26,6 +27,13 @@ program define rdsensitivity, rclass sortpreserve
 													  noDOTS                      ///
 													  noDRAW                      ///
 													  verbose ]
+    local poly_unavailable ""
+    rdlocrand_inference, p(`p') statistic(`statistic') vce(`vce') `poly_unavailable'
+    local p_requested = r(p_requested)
+    local p = r(p)
+    local vce "`r(vce)'"
+    local poly_warning "`r(warning)'"
+
 
 	tokenize `varlist'
 	local outvar "`1'"
@@ -212,7 +220,8 @@ program define rdsensitivity, rclass sortpreserve
 	local matrows ""
 	local matcols ""
 
-	di _newline as text "Running randomization-based test..."
+	if `p'==0 di _newline as text "Running randomization-based test..."
+    else di _newline as text "Running large-sample tests, " upper("`vce'")
 	
 	local count = 1	
 	forvalues w = 1/`nw'{
@@ -230,9 +239,9 @@ program define rdsensitivity, rclass sortpreserve
 		
 		if "`evalat'"=="means"{
 			qui sum `runv_aux' if `treated'==1 & `runvar'<=`w_right' & `runvar'>=`w_left' & `touse'
-			local evalr = r(mean)
+			local evalr = r(mean)-`cutoff'
 			qui sum `runv_aux' if `treated'==0 & `runvar'<=`w_right' & `runvar'>=`w_left' & `touse'
-			local evall = r(mean)
+			local evall = r(mean)-`cutoff'
 			local eval_opt "evall(`evall') evalr(`evalr')"
 		}
 		
@@ -240,8 +249,9 @@ program define rdsensitivity, rclass sortpreserve
 		foreach t of local tlist{
 			mat tlist_vec[1,`row'] = `t'
 			qui rdrandinf `outvar' `runvar' if `touse', wl(`w_left') wr(`w_right') p(`p') reps(`reps') nulltau(`t') ///
-				`stat_opt' `eval_opt' `kernel_opt' `fuzzy_opt' seed(`seed')
-			mat Res[`row',`w'] = r(randpval)
+				`stat_opt' `eval_opt' `kernel_opt' `fuzzy_opt' vce(`vce') seed(`seed')
+			if `p'==0 mat Res[`row',`w'] = r(randpval)
+            else mat Res[`row',`w'] = r(asy_pval)
 			
 			if "`dots'"==""{
 				*if mod(`count',`nt')!=0{
@@ -259,7 +269,7 @@ program define rdsensitivity, rclass sortpreserve
 
 	}
 	
-	di _newline as text "Randomization-based test complete."
+	di _newline as text "Sensitivity analysis complete."
 
 	local row = 1
 	foreach t of local tlist{
@@ -352,5 +362,11 @@ program define rdsensitivity, rclass sortpreserve
 ********************************************************************************
 	
 	return matrix results = Res
+
+    return scalar p_requested = `p_requested'
+    return scalar p = `p'
+    return local p_warning "`poly_warning'"
+    if `p'>0 return local vce "`vce'"
+    if "`poly_warning'"!="" di as error "Warning: `poly_warning'"
 
 end

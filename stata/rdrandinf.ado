@@ -2,7 +2,7 @@
 * RDRANDINF: randomization inference in RD designs
 * Authors: Matias Cattaneo, Rocio Titiunik, Gonzalo Vazquez-Bare
 ********************************************************************************
-* !version 2.0 2026-05-14
+* !version 3.0 2026-10-04
 
 version 13
 
@@ -13,6 +13,7 @@ program define rdrandinf, rclass sortpreserve
 													 wl(numlist max=1)           ///
 													 wr(numlist max=1)           ///
 													 STATistic(string)           ///
+													 VCE(string)                ///
 													 p(integer 0)                ///
 													 evall(numlist max=1)        ///
 													 evalr(numlist max=1)        ///
@@ -44,6 +45,16 @@ program define rdrandinf, rclass sortpreserve
 													 obsstep(numlist max=1)      ///
 													 FIRSTstage					 ///
 													 QUIetly]
+    local poly_unavailable ""
+    if `interfci'>0 local poly_unavailable "unavailable(interfci)"
+    local poly_stat "`statistic'"
+    if "`fuzzy'"!="" local poly_stat ""
+    rdlocrand_inference, p(`p') statistic(`poly_stat') vce(`vce') `poly_unavailable'
+    local p_requested = r(p_requested)
+    local p = r(p)
+    local vce "`r(vce)'"
+    local poly_warning "`r(warning)'"
+
 	
 	tempvar tr
 	tempvar runvar
@@ -91,7 +102,7 @@ program define rdrandinf, rclass sortpreserve
 			di as error "`kernel' not a valid kernel"
 			exit 198
 		}
-		if "`evall'"!="" & "`evalr'"!=""{
+		if "`kernel'"!="uniform" & "`evall'"!="" & "`evalr'"!=""{
 			if `evall'!=`cutoff' | `evalr'!=`cutoff'{
 				di as error "kernel only allowed when evall=evalr=cutoff"
 				exit 198
@@ -211,12 +222,13 @@ program define rdrandinf, rclass sortpreserve
 			
 			if "`quietly'"==""{
 				rdwinselect `r' `covariates' if `touse', c(`cutoff') `obsmin_opt' `obsstep_opt' `wmin_opt' `wstep_opt' `wasymmetric' `wmasspoints' ///
-					`wobs_opt' `nwindows_opt' `rdwstat_opt' `approximate_opt' reps(`rdwreps') `level_opt' `dropmissing' `plot_opt' `graph_opt'
+					`wobs_opt' `nwindows_opt' `rdwstat_opt' p(`p') vce(`vce') nowarn `approximate_opt' reps(`rdwreps') `level_opt' `dropmissing' `plot_opt' `graph_opt'
 			}
 			else {
 				qui rdwinselect `r' `covariates' if `touse', c(`cutoff') `obsmin_opt' `obsstep_opt' `wmin_opt' `wstep_opt' `wasymmetric' `wmasspoints' ///
-					`wobs_opt' `nwindows_opt' `approximate_opt' reps(`rdwreps') `level_opt' `dropmissing' `plot_opt' `graph_opt'
+					`wobs_opt' `nwindows_opt' `rdwstat_opt' p(`p') vce(`vce') nowarn `approximate_opt' reps(`rdwreps') `level_opt' `dropmissing' `plot_opt' `graph_opt'
 			}	
+            if `"`r(p_warning)'"'!="" local poly_warning `"Window selection: `r(p_warning)'"'
 			if r(w_left)==. | r(w_right)==.{
 				di as error "rdwinselect could not find a recommended window"
 				exit 498
@@ -400,36 +412,8 @@ program define rdrandinf, rclass sortpreserve
 		local kernel_disp "Epanechnikov"
 	}
 
-	if `p'==0 {
-		qui gen double `Y_adj' = `Y'
-	}
-	else {
-		qui{
-			if "`evall'"=="" & "`evalr'"==""{
-				local evalr = `cutoff'
-				local evall = `cutoff'
-			}
-			
-			tempvar r_t r_c resid_l resid_r
-			gen double `r_t' = `r'-`evalr'
-			gen double `r_c' = `r'-`evall'
-			
-			forvalues k=1/`p'{
-				gen _runpoly_t_`k'=`r_t'^`k'
-			}
-			reg `Y' _runpoly_t_* if `tr'==1 `kweights_opt'
-			predict `resid_r' if e(sample), residuals
-			gen double `Y_adj' = `resid_r' + _b[_cons] if e(sample)
-			
-			forvalues k=1/`p'{
-				gen _runpoly_c_`k'=`r_c'^`k'
-			}
-			reg `Y' _runpoly_c_* if `tr'==0 `kweights_opt'
-			predict `resid_l' if e(sample), residuals
-			replace `Y_adj' = `resid_l' + _b[_cons] if e(sample)
-		}
-	}
-	
+	qui gen double `Y_adj' = `Y'
+
 	if "`fuzzy'"==""{
 		qui gen double `Y_adj_null' = `Y_adj'-`nulltau'*`tr'
 	}
@@ -439,6 +423,58 @@ program define rdrandinf, rclass sortpreserve
 
 	** Observed values, asymptotic p-values and power
 
+    if `p'>0 {
+        if "`evall'"=="" local evall = `cutoff'
+        if "`evalr'"=="" local evalr = `cutoff'
+        tempvar poly_null
+        local target `tr'
+        if "`fuzzy'"!="" local target `fuzzy_treat'
+        qui gen double `poly_null' = `Y'-`nulltau'*`target'
+        local ivopt ""
+        local response `poly_null'
+        if "`fuzzy_stat'"=="tsls" {
+            local ivopt "treatment(`fuzzy_treat') `firststage'"
+            local response `Y'
+        }
+        qui rdlocrand_hc `response' `r' `tr' `kweights_opt', p(`p') vce(`vce') evall(`evall') evalr(`evalr') `ivopt'
+        local obs_stat = r(estimate)
+        local hc_se = r(se)
+        local centered_stat = `obs_stat'
+        if "`fuzzy_stat'"=="tsls" local centered_stat = `obs_stat'-`nulltau'
+        local asy_p = 2*normal(-abs(`centered_stat'/`hc_se'))
+        local power = 1-normal(1.96-`delta'/`hc_se')+normal(-1.96-`delta'/`hc_se')
+        if "`ci'"!="" {
+            if "`fuzzy_stat'"=="tsls" | ("`fuzzy'"=="" & "`ci_tlist'"=="") {
+                local estimate = `obs_stat'
+                if "`fuzzy'"=="" local estimate = `obs_stat'+`nulltau'
+                local ci_lb = `estimate'-invnormal(1-`ci_level'/2)*`hc_se'
+                local ci_ub = `estimate'+invnormal(1-`ci_level'/2)*`hc_se'
+                mat CI = (`ci_lb',`ci_ub')
+            }
+            else {
+                if "`ci_tlist'"=="" {
+                    di as error "For fuzzy Anderson-Rubin confidence sets, supply the treatment-effect grid in ci()."
+                    exit 198
+                }
+                numlist "`ci_tlist'", sort
+                local poly_grid "`r(numlist)'"
+                local ng: word count `poly_grid'
+                tempname poly_p poly_t
+                mat `poly_p' = J(1,`ng',.)
+                mat `poly_t' = J(1,`ng',.)
+                local j = 1
+                foreach tau of local poly_grid {
+                    qui replace `poly_null' = `Y'-`tau'*`target'
+                    qui rdlocrand_hc `poly_null' `r' `tr' `kweights_opt', p(`p') vce(`vce') evall(`evall') evalr(`evalr')
+                    mat `poly_p'[1,`j'] = 2*normal(-abs(r(estimate)/r(se)))
+                    mat `poly_t'[1,`j'] = `tau'
+                    local ++j
+                }
+                mata: rdlocrand_confint(st_matrix("`poly_p'"),`ci_level',st_matrix("`poly_t'"))
+            }
+        }
+    }
+    else {
 	tempvar Y_null
 
 	qui{
@@ -581,11 +617,13 @@ program define rdrandinf, rclass sortpreserve
 					reg `fuzzy_treat' `tr' `kweights_opt', robust
 					est store first_stage, title("First stage regression")
 					ivregress 2sls `Y_fuzzy' (`fuzzy_treat'=`tr') `kweights_opt', robust
-					local obs_stat = _b[`fuzzy_treat']
+					local obs_stat = _b[`fuzzy_treat']+`nulltau'
 					local asy_p = 2*normal(-abs(_b[`fuzzy_treat']/_se[`fuzzy_treat']))
 					local power = 1-normal(1.96-`delta'/_se[`fuzzy_treat'])+normal(-1.96-`delta'/_se[`fuzzy_treat'])				
-					local ci_lb = `obs_stat' - 1.96*_se[`fuzzy_treat']
-					local ci_ub = `obs_stat' + 1.96*_se[`fuzzy_treat']
+					local critical = 1.96
+					if "`ci'"!="" local critical = invnormal(1-`ci_level'/2)
+					local ci_lb = `obs_stat' - `critical'*_se[`fuzzy_treat']
+					local ci_ub = `obs_stat' + `critical'*_se[`fuzzy_treat']
 				}
 				else {
 					forvalues k=1/`p'{
@@ -606,10 +644,11 @@ program define rdrandinf, rclass sortpreserve
 		}
 	}
 
-	
+	    }
+
 	** Randomization test
 	
-	if "`fuzzy_stat'"!="tsls"{
+	if `p'==0 & "`fuzzy_stat'"!="tsls"{
 		di _newline as text "Running randomization-based test..."
 
 		if "`bernoulli'"==""{
@@ -748,10 +787,12 @@ program define rdrandinf, rclass sortpreserve
 	di as text "Cutoff c = " as res %4.2f `cutoff' 	as text _col(19) "{c |}" 	_col(22) "Left of c" 				_col(33) "Right of c"			_col(51) 		 "Number of obs = " as res %14.0f `n_tot'
 	di as text "{hline 18}{c +}{hline 23}"																											_col(51) 		 "Order of poly = "	as res %14.0f `p'
 	di as text "{ralign 18:Number of obs}"					_col(19) "{c |}" 	_col(22) as res %9.0f `n_tot_left'	_col(33) %10.0f `n_tot_right'	_col(51) as text "Kernel type   = "	 as res "{ralign 14: `kernel_disp'}"
-	di as text "{ralign 18:Eff. Number of obs}"				_col(19) "{c |}" 	_col(22) as res %9.0f `n_left'		_col(33) %10.0f `n_right'		_col(51) as text "Reps          = " as res %14.0f `reps'
+    if `p'==0 di as text "{ralign 18:Eff. Number of obs}"				_col(19) "{c |}" 	_col(22) as res %9.0f `n_left'		_col(33) %10.0f `n_right'		_col(51) as text "Reps          = " as res %14.0f `reps'
+    else di as text "{ralign 18:Eff. Number of obs}"				_col(19) "{c |}" 	_col(22) as res %9.0f `n_left'		_col(33) %10.0f `n_right'
 	di as text "{ralign 18:Mean of outcome}"				_col(19) "{c |}" 	_col(22) as res %9.3f `m_left'		_col(33) %10.3f `m_right'		_col(51) as text "Window        = " as res "{ralign 14: `wselect'}"
 	di as text "{ralign 18:S.D. of outcome}"				_col(19) "{c |}" 	_col(22) as res %9.3f `s_left'		_col(33) %10.3f `s_right'		_col(51) as text "H0:       tau = " as res %14.3f `nulltau'
-	di as text "{ralign 18:Window}"							_col(19) "{c |}" 	_col(22) as res %9.3f `wl'			_col(33) %10.3f `wr'			_col(51) as text "Randomization = " as res "{ralign 12: `assimech'}"
+    if `p'==0 di as text "{ralign 18:Window}"							_col(19) "{c |}" 	_col(22) as res %9.3f `wl'			_col(33) %10.3f `wr'			_col(51) as text "Randomization = " as res "{ralign 12: `assimech'}"
+    else di as text "{ralign 18:Window}"							_col(19) "{c |}" 	_col(22) as res %9.3f `wl'			_col(33) %10.3f `wr'
 
 	if "`statdisp'"=="TSLS" & "`firststage'"!=""{
 		est replay first_stage
@@ -759,6 +800,17 @@ program define rdrandinf, rclass sortpreserve
 	
 	di as text _newline "Outcome: " as res "`Y'" as text ". Running variable: " as res "`r'" as text "."
 
+    if `p'>0 {
+        di as text "Large-sample inference, " upper("`vce'")
+        di as text "Statistic                 T       P>|T|     Std. error"
+        di as text "`statdisp'" _col(22) as res %9.3f `obs_stat' _col(34) %9.3f `asy_p' _col(47) %9.3f `hc_se'
+        return scalar randpval = .
+        return scalar asy_pval = `asy_p'
+        return scalar obs_stat = `obs_stat'
+        return scalar se = `hc_se'
+        if "`ci'"!="" matlist CI, title("Large-sample confidence set")
+    }
+    else {
 	di as text "{hline 18}{c TT}{hline 61}"
 	di as text									_col(19) "{c |}"		_col(34) "Finite sample"				_col(60) "Large sample"
 	di as text 									_col(19) "{c |}"		_col(33) "{hline 15}"		_col(50) "{hline 31}"
@@ -788,13 +840,14 @@ program define rdrandinf, rclass sortpreserve
 		return matrix asy_pval = aux3
 		return matrix obs_stat = aux2
 	}
-	
-	if "`ci'"!=""{
+	    }
+
+	if "`ci'"!="" & `p'==0{
 		if "`fuzzy_stat'"!="tsls"{	
 			di "Calculating confidence interval..."
 			local wlength_r = `wr' - `cutoff'
 			local wlength_l = `wl' - `cutoff'
-			qui rdsensitivity `Y' `runvar', p(`p') wlist(`wlength_r') wlist_left(`wlength_l') `stat_opt_ci' `fuzzy_cond_ci' `tlist_opt' ci(`wlength_l' `wlength_r') ci_alpha(`ci_level') nodraw reps(`reps') 
+			qui rdsensitivity `Y' `runvar', p(`p') wlist(`wlength_r') wlist_left(`wlength_l') `stat_opt_ci' `fuzzy_cond_ci' `tlist_opt' ci(`wlength_l' `wlength_r') ci_alpha(`ci_level') nodraw reps(`reps') kernel(`kernel') seed(`seed') vce(`vce')
 			mat CI = r(CI)
 			di as text _newline "Confidence interval for w = [" as res %9.3f `wl' _c as text " , " as res %9.3f `wr' as text "]" _newline
 			di as text "{hline 18}{c TT}{hline 23}"
@@ -850,5 +903,17 @@ program define rdrandinf, rclass sortpreserve
 		return matrix CI = CI
 	}
 	
+    if `p'>0 {
+        return scalar randpval = .
+        return scalar asy_pval = `asy_p'
+        return scalar obs_stat = `obs_stat'
+        return scalar se = `hc_se'
+    }
+    return scalar p_requested = `p_requested'
+    return scalar p = `p'
+    return local p_warning "`poly_warning'"
+    if `p'>0 return local vce "`vce'"
+    if "`poly_warning'"!="" di as error "Warning: `poly_warning'"
+
 end
 

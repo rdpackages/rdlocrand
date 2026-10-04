@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import numpy as np
+from rdlocrand.rdlocrand_fun import rdlocrand_inference
 from rdlocrand.rdwinselect import rdwinselect
 from rdlocrand.rdrandinf import rdrandinf
 from rdlocrand.rdlocrand_fun import (
@@ -45,6 +46,11 @@ def rdrbounds(Y, R, cutoff=0, wlist=None, gamma=None, expgamma=None,
     URL: https://rdpackages.github.io/references/Cattaneo-Titiunik-VazquezBare_2017_JPAM.pdf
 
     Rosenbaum, P. (2002). Observational Studies. Springer.
+
+    Notes:
+    Polynomial adjustment is unavailable for Rosenbaum bounds. A positive p is
+    replaced by p = 0 and a warning is issued at the end. The bounds are computed
+    without polynomial adjustment.
 
     Parameters:
     -----------
@@ -118,6 +124,7 @@ def rdrbounds(Y, R, cutoff=0, wlist=None, gamma=None, expgamma=None,
           included when ``bound='lower'`` or ``bound='both'``.
         - ``upper.bound``: upper-bound p-values for each gamma-window pair;
           included when ``bound='upper'`` or ``bound='both'``.
+        - ``p.requested``, ``p``: requested and effective polynomial degrees.
 
     Examples:
     ---------
@@ -140,6 +147,8 @@ def rdrbounds(Y, R, cutoff=0, wlist=None, gamma=None, expgamma=None,
     # Parameters and error checking
     ###############################################################################
 
+    inference = rdlocrand_inference(p, statistic, unavailable='rdrbounds')
+    p = inference['p']
     if cutoff <= np.nanmin(R) or cutoff >= np.nanmax(R):
         raise ValueError('Cutoff must be within the range of the running variable')
 
@@ -463,4 +472,5 @@ def rdrbounds(Y, R, cutoff=0, wlist=None, gamma=None, expgamma=None,
         output['p.values'] = P
         output['lower.bound'] = p_lb
 
+    output.update(inference)
     return output

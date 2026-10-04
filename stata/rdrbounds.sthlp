@@ -1,5 +1,5 @@
 {smcl}
-{* *! version 2.0 14May2026}{...}
+{* *! version 3.0 04Oct2026}{...}
 {viewerjumpto "Syntax" "rdrbounds##syntax"}{...}
 {viewerjumpto "Description" "rdrbounds##description"}{...}
 {viewerjumpto "Options" "rdrbounds##options"}{...}
@@ -58,6 +58,8 @@ for an introduction to this methodology. See also Rosenbaum (2002) for a backgro
 
 {p 8 8}{browse "https://rdpackages.github.io/":https://rdpackages.github.io/}{p_end}
 
+
+{p 4 8}Polynomial adjustment is unavailable for Rosenbaum bounds. A positive p is replaced by {cmd:p(0)} and a warning is issued at the end. The bounds are computed without polynomial adjustment.{p_end}
 
 {marker options}{...}
 {title:Options}
@@ -143,6 +145,11 @@ Default is {cmd:seed(666)}.{p_end}
 {title:Saved results}
 
 {p 4 8}{cmd:rdrbounds} saves the following in {cmd:r()}:
+
+{synoptset 20 tabbed}{...}
+{p2col 5 20 24 2: Scalars}{p_end}
+{synopt:{cmd:r(p_requested)}} requested polynomial degree{p_end}
+{synopt:{cmd:r(p)}} effective polynomial degree{p_end}
 
 {synoptset 20 tabbed}{...}
 {p2col 5 20 24 2: Matrices}{p_end}

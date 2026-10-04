@@ -1,6 +1,6 @@
 ###############################################################################
 # rdrbounds: Rosenbaum bounds for randomization inference in RD
-# !version 2.0 14-May-2026
+# !version 3.0 04-Oct-2026
 # Authors: Matias Cattaneo, Rocio Titiunik, Gonzalo Vazquez-Bare
 ###############################################################################
 
@@ -45,6 +45,11 @@
 #' @param reps the number of replications. Default is 1000.
 #' @param seed the seed to be used for the randomization tests.
 #'
+#' @details
+#' Polynomial adjustment is unavailable for Rosenbaum bounds. A positive p is
+#' replaced by \code{p = 0} and a warning is issued at the end. The bounds are computed
+#' without polynomial adjustment.
+#'
 #' @return
 #' A list containing:
 #' \item{gamma}{vector of gamma values.}
@@ -56,6 +61,8 @@
 #' included when \code{bound = "lower"} or \code{bound = "both"}.}
 #' \item{upper.bound}{matrix of upper-bound p-values for each gamma-window pair;
 #' included when \code{bound = "upper"} or \code{bound = "both"}.}
+#'
+#' \item{p.requested, p}{requested and effective polynomial degrees.}
 #'
 #' @examples
 #' # Toy dataset
@@ -92,6 +99,11 @@ rdrbounds = function(Y,R,
   ###############################################################################
   # Parameters and error checking
   ###############################################################################
+
+  finish_inference <- rdlocrand_inference_scope()
+  on.exit(finish_inference(), add = TRUE)
+  inference <- rdlocrand_inference(p, statistic, unavailable='rdrbounds')
+  p <- inference$p
 
   if (cutoff<=min(R,na.rm=TRUE) | cutoff>=max(R,na.rm=TRUE)) stop('Cutoff must be within the range of the running variable')
   rdlocrand_validate_choice(bound, c('both','upper','lower'), 'bound option incorrectly specified')
@@ -449,6 +461,8 @@ rdrbounds = function(Y,R,
                   p.values = P, lower.bound = p.lb)
   }
 
+  output$p.requested <- inference$p.requested
+  output$p <- p
   return(output)
 
 }

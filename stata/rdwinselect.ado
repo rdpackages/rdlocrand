@@ -2,7 +2,7 @@
 * RDWINSELECT: window selection for randomization inference in RD
 * Authors: Matias Cattaneo, Rocio Titiunik, Gonzalo Vazquez-Bare
 ********************************************************************************
-* !version 2.0 2026-05-14
+* !version 3.0 2026-10-04
 
 version 13
 
@@ -19,7 +19,8 @@ program define rdwinselect, rclass sortpreserve
 												NWindows(real 10)     ///
 												DROPMISSing           ///
 												STATistic(string)     ///
-												p(integer 0)          ///
+												VCE(string) NOWARN                ///
+													 p(integer 0)          ///
 												evalat(string)        ///
 												kernel(string)        ///
 												APPROXimate           ///
@@ -30,6 +31,14 @@ program define rdwinselect, rclass sortpreserve
 												graph_options(string) ///
 												genvars               ///
 												obsstep(numlist max=1) ]
+    local poly_unavailable ""
+    rdlocrand_inference, p(`p') statistic(`statistic') vce(`vce') `poly_unavailable'
+    local p_requested = r(p_requested)
+    local p = r(p)
+    local vce "`r(vce)'"
+    local poly_warning "`r(warning)'"
+    if `p'>0 local approximate "approximate"
+
 	
 	tokenize `varlist'
 	local runv_aux "`1'"
@@ -466,42 +475,14 @@ program define rdwinselect, rclass sortpreserve
 					local kwrd_opt "weights(`kweights')"
 				}
 
-				if `p'>0{
-					if "`evalat'"==""|"`evalat'"=="cutoff"{
-						local evalr = `cutoff'
-						local evall = `cutoff'
-					}
-					else {
-						qui sum `runv_aux' if `treated'==1
-						local evalr = r(mean)
-						qui sum `runv_aux' if `treated'==0
-						local evall = r(mean)
-					}
-					tempvar r_t r_c resid_l resid_r
-					qui gen double `r_t' = `runv_aux'-`evalr'
-					qui gen double `r_c' = `runv_aux'-`evall'
-
-					foreach cov of varlist `covariates'{
-						qui{
-
-							forvalues k=1/`p'{
-								gen _rpt_`cov'`k'=`r_t'^`k'
-							}
-							reg `cov' _rpt_`cov'* if `treated'==1 `kweights_opt'
-							predict `resid_r' if e(sample), residuals
-							gen double _adj_`cov' = `resid_r' + _b[_cons] if e(sample)
-
-							forvalues k=1/`p'{
-								gen _rpc_`cov'`k'=`r_c'^`k'
-							}
-							reg `cov' _rpc_`cov'* if `treated'==0 `kweights_opt'
-							predict `resid_l' if e(sample), residuals
-							replace _adj_`cov' = `resid_l' + _b[_cons] if e(sample)
-
-							drop `resid_l' `resid_r'
-						}
-					}
-				}
+                local poly_evall = `cutoff'
+                local poly_evalr = `cutoff'
+                if "`evalat'"=="means" {
+                    qui sum `runv_aux' if `treated'==0, meanonly
+                    local poly_evall = r(mean)
+                    qui sum `runv_aux' if `treated'==1, meanonly
+                    local poly_evalr = r(mean)
+                }
 
 				* Balance test
 
@@ -535,24 +516,10 @@ program define rdwinselect, rclass sortpreserve
 									qui reg `cov' `treated' `kweights_opt', vce(hc2)
 									local asy_p = 2*normal(-abs(_b[`treated']/_se[`treated']))
 								}
-								else {
-									if "`evalat'"==""|"`evalat'"=="cutoff"{
-										forvalues k=1/`p'{
-											gen _rp_`cov'`k'=`runvar'^`k'
-										}
-										qui reg `cov' `treated'##c.(_rp_`cov'*) `kweights_opt', vce(hc2)	
-										local asy_p = 2*normal(-abs(_b[1.`treated']/_se[1.`treated']))
-									}
-									else {
-										qui reg `cov' _runpoly_t_* if `treated'==1
-										local a_t = _b[_cons]
-										local se_t = _se[_cons]
-										qui reg `cov' _runpoly_c_* if `treated'==0
-										local a_c = _b[_cons]
-										local se_c = _se[_cons]
-										local asy_p = 2*normal(-abs(`obs_stat'/sqrt(`se_t'^2+`se_c'^2)))
-									}
-								}
+                                else {
+                                    qui rdlocrand_hc `cov' `runv_aux' `treated' `kweights_opt', p(`p') vce(`vce') evall(`poly_evall') evalr(`poly_evalr')
+                                    local asy_p = 2*normal(-abs(r(estimate)/r(se)))
+                                }
 							}
 							else {
 								rdrandinf_model `cov' `treated', stat(`statistic') asy
@@ -777,6 +744,15 @@ program define rdwinselect, rclass sortpreserve
 	}
 	
 	
+    return scalar p_requested = `p_requested'
+    return scalar p = `p'
+    return local p_warning "`poly_warning'"
+    if `p'>0 {
+        return local vce "`vce'"
+        di as text "Large-sample inference, " upper("`vce'")
+    }
+    if "`poly_warning'"!="" & "`nowarn'"=="" di as error "Warning: `poly_warning'"
+
 end
 
 
@@ -790,5 +766,6 @@ capture program drop output_line
 program output_line
 	args window_l window_r cov vname bin nt nc
 	display as res %8.3f `window_l' as text "|" as res %8.3f `window_r'	_col(18) as text " {c |}" as result _col(26) %4.3f `cov' " " _col(38) %10s abbrev("`vname'",16)  _col(54) %8.3f `bin'  " " _col(64) %8.0f   `nc' " " _col(73) %8.0f `nt'
+
 end
 

@@ -1,6 +1,6 @@
 ###############################################################################
 # rdwinselect: window selection for randomization inference in RD
-# !version 2.0 14-May-2026
+# !version 3.0 04-Oct-2026
 # Authors: Matias Cattaneo, Rocio Titiunik, Gonzalo Vazquez-Bare
 ###############################################################################
 
@@ -53,6 +53,14 @@
 #' @param quietly suppresses output.
 #' @param obsstep the minimum number of observations to be added on each side of the cutoff for the sequence of fixed-increment nested windows. This option is deprecated and only included for backward compatibility.
 #'
+#' @param vce heteroskedasticity-consistent variance estimator for \code{p > 0}: \code{HC1}, \code{HC2}, or \code{HC3} (default). Ignored when \code{p = 0}.
+#'
+#' @details
+#' With \code{p > 0}, mean balance tests use large-sample normal inference from the full
+#' polynomial regression, with HC3 standard errors by default, regardless of approx.
+#' For ksmirnov, ranksum, or hotelling, a positive p is replaced by \code{p = 0}
+#' and a warning is issued at the end. Inference with \code{p = 0} is unchanged.
+#'
 #' @return
 #' A list containing:
 #' \item{w_left}{left endpoint of the recommended window.}
@@ -63,6 +71,10 @@
 #' selected covariate index, binomial-test p-value, sample sizes below and
 #' above the cutoff, and window endpoints for each candidate window.}
 #' \item{summary}{matrix of sample-size summaries by side of the cutoff.}
+#'
+#' \item{p.requested, p}{requested and effective polynomial degrees.}
+#' \item{vce}{HC variance estimator; \code{NA} when \code{p = 0}.}
+#' \item{inference}{inference method used.}
 #'
 #' @examples
 #' # Toy dataset
@@ -102,15 +114,21 @@ rdwinselect <- function(R, X,
                        seed = 666,
                        plot = FALSE,
                        quietly = FALSE,
-                       obsstep = NULL) {
+                       obsstep = NULL, vce = "HC3") {
 
 
   ###############################################################################
   # Parameters and error checking
   ###############################################################################
 
+  finish_inference <- rdlocrand_inference_scope()
+  on.exit(finish_inference(), add = TRUE)
+
   if (cutoff<=min(R,na.rm=TRUE) | cutoff>=max(R,na.rm=TRUE)) stop('Cutoff must be within the range of the running variable')
   if (p<0) stop('p must be a positive integer')
+  inference <- rdlocrand_inference(p, statistic, vce, context = "rdwinselect")
+  p <- inference$p
+  if (p > 0){ approx <- TRUE; vce <- inference$vce }
   if (p>0 & approx==TRUE & statistic!='ttest' & statistic!='diffmeans') stop('approximate and p>1 can only be combined with diffmeans')
   rdlocrand_validate_choice(
     statistic,
@@ -135,7 +153,7 @@ rdwinselect <- function(R, X,
   }
 
   Rc <- R - cutoff
-  D <- Rc >= 0
+  D <- as.numeric(Rc >= 0)
 
   if (!missing(X)){
     if (dropmissing==FALSE){
@@ -199,7 +217,7 @@ rdwinselect <- function(R, X,
   ## Define initial window
 
   if (is.null(wmin)){
-    posl <-
+    posl <- n0
     posr <- n0 + 1
 
     if (is.null(obsmin)){
@@ -228,7 +246,7 @@ rdwinselect <- function(R, X,
     if (wcount==1){
       wmin_right <- wmin
       wmin_left <- -wmin
-      posmin_right <- 45 + sum(Rc<=wmin & Rc>=0)
+      posmin_right <- n0 + sum(Rc<=wmin & Rc>=0)
       posmin_left <- n0 - sum(Rc<0 & Rc>=-wmin) + 1
     } else if(wcount==2){
       wmin_left <- wmin[1]
@@ -441,18 +459,17 @@ rdwinselect <- function(R, X,
 
         if (kernel=='triangular'){
           kweights <- (1-abs(Rw/wupper))*(abs(Rw/wupper)<=1)
-          kweights[kweights==0] <- .Machine$double.eps
+          if (p == 0) kweights[kweights==0] <- .Machine$double.eps
         }
         if (kernel=='epan'){
           kweights <- .75*(1-(Rw/wupper)^2)*(abs(Rw/wupper)<=1)
-          kweights[kweights==0] <- .Machine$double.eps
+          if (p == 0) kweights[kweights==0] <- .Machine$double.eps
         }
 
         ## Model adjustment
 
         if (p>0){
 
-          X.adj <- matrix(NA,nrow=nrow(Xw),ncol=ncol(Xw))
 
           if (evalat=='cutoff'){
             evall <- cutoff
@@ -464,13 +481,7 @@ rdwinselect <- function(R, X,
           R.adj <- Rw + cutoff - Dw*evalr - (1-Dw)*evall
           Rpoly <- poly(R.adj,order=p,raw=TRUE)
 
-          for (k in 1:ncol(Xw)){
-            lfit.t <- lm(Xw[Dw==1,k] ~ Rpoly[Dw==1,],weights=kweights[Dw==1])
-            X.adj[Dw==1,k] <- lfit.t$residuals + lfit.t$coefficients[1]
-            lfit.c <- lm(Xw[Dw==0,k] ~ Rpoly[Dw==0,],weights=kweights[Dw==0])
-            X.adj[Dw==0,k] <- lfit.c$residuals + lfit.c$coefficients[1]
-          }
-          Xw <- X.adj
+
         }
 
         ## Statistics and p-values
@@ -493,8 +504,10 @@ rdwinselect <- function(R, X,
           table_rdw[j,1] <- p.value
           varname <- NA
         } else {
-          aux <- rdrandinf.model(Xw,Dw,statistic=statistic,kweights=kweights,pvalue=TRUE)
-          obs.stat <- as.numeric(aux$statistic)
+          if (p == 0){
+            aux <- rdrandinf.model(Xw,Dw,statistic=statistic,kweights=kweights,pvalue=TRUE)
+            obs.stat <- as.numeric(aux$statistic)
+          }
           if (approx==FALSE){
             stat.distr <- array(NA,dim=c(reps,ncol(X)))
             for (i in 1:reps){
@@ -510,9 +523,8 @@ rdwinselect <- function(R, X,
             } else {
               p.value <- numeric(ncol(X))
               for (k in 1:ncol(X)){
-                lfit <- lm(Xw[,k] ~ Dw + Rpoly + Dw*Rpoly,weights=kweights)
-                tstat <- lfit$coefficients['Dw']/sqrt(sandwich::vcovHC(lfit,type='HC2')['Dw','Dw'])
-                p.value[k] <- 2*pnorm(-abs(tstat))
+                fit <- rdlocrand_hc_fit(Xw[,k], Dw, Rpoly, kweights, vce)
+                p.value[k] <- 2*pnorm(-abs(fit$estimate/fit$se))
               }
             }
           }
@@ -629,6 +641,11 @@ rdwinselect <- function(R, X,
                  results = table_rdw,
                  summary = table_sumstats)
 
+  output$p.requested <- inference$p.requested
+  output$p <- p
+  output$vce <- inference$vce
+  output$inference <- if (approx) 'large-sample' else 'randomization'
+  if (p > 0 && !quietly) cat(paste0('Large-sample inference, ', vce, '\n'))
   return(output)
 
 }

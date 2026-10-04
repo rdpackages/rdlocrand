@@ -26,7 +26,8 @@ rdwinselect(
   seed = 666,
   plot = FALSE,
   quietly = FALSE,
-  obsstep = NULL
+  obsstep = NULL,
+  vce = "HC3"
 )
 }
 \arguments{
@@ -73,6 +74,8 @@ rdwinselect(
 \item{quietly}{suppresses output.}
 
 \item{obsstep}{the minimum number of observations to be added on each side of the cutoff for the sequence of fixed-increment nested windows. This option is deprecated and only included for backward compatibility.}
+
+\item{vce}{heteroskedasticity-consistent variance estimator for \code{p > 0}: \code{HC1}, \code{HC2}, or \code{HC3} (default). Ignored when \code{p = 0}.}
 }
 \value{
 A list containing:
@@ -84,6 +87,10 @@ A list containing:
 selected covariate index, binomial-test p-value, sample sizes below and
 above the cutoff, and window endpoints for each candidate window.}
 \item{summary}{matrix of sample-size summaries by side of the cutoff.}
+
+\item{p.requested, p}{requested and effective polynomial degrees.}
+\item{vce}{HC variance estimator; \code{NA} when \code{p = 0}.}
+\item{inference}{inference method used.}
 }
 \description{
 \code{rdwinselect} implements a window-selection procedure based on balance
@@ -94,6 +101,12 @@ above the cutoff, and window endpoints for each candidate window.}
  such that the minimum p-value from the balance tests is larger than a
  prespecified level for all nested (smaller) windows. By default, the p-values
  are calculated using randomization inference methods.
+}
+\details{
+With \code{p > 0}, mean balance tests use large-sample normal inference from the full
+polynomial regression, with HC3 standard errors by default, regardless of approx.
+For ksmirnov, ranksum, or hotelling, a positive p is replaced by \code{p = 0}
+and a warning is issued at the end. Inference with \code{p = 0} is unchanged.
 }
 \examples{
 # Toy dataset
