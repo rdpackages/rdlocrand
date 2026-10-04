@@ -3,7 +3,7 @@
 All notable changes to RDLOCRAND will be recorded here. This changelog starts
 with the May 2026 modernization baseline.
 
-## [3.0] - Unreleased
+## [3.0] - 2026-10-04
 
 ### Fixed
 
